@@ -1,28 +1,24 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-
-import { FindOptionsWhere, Repository, In } from 'typeorm';
-import { UserEntity } from '../entities/user.entity';
-import { NullableType } from '../../../../../utils/types/nullable.type';
-import { FilterUserDto, SortUserDto } from '../../../../dto/query-user.dto';
-import { User } from '../../../../domain/user';
+import { PrismaService } from '../../../../../database/prisma.service';
 import { UserRepository } from '../../user.repository';
 import { UserMapper } from '../mappers/user.mapper';
+import { User } from '../../../../domain/user';
+import { NullableType } from '../../../../../utils/types/nullable.type';
+import { FilterUserDto, SortUserDto } from '../../../../dto/query-user.dto';
 import { IPaginationOptions } from '../../../../../utils/types/pagination-options';
+
+const USER_INCLUDE = { photo: true, role: true, status: true } as const;
 
 @Injectable()
 export class UsersRelationalRepository implements UserRepository {
-  constructor(
-    @InjectRepository(UserEntity)
-    private readonly usersRepository: Repository<UserEntity>,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(data: User): Promise<User> {
-    const persistenceModel = UserMapper.toPersistence(data);
-    const newEntity = await this.usersRepository.save(
-      this.usersRepository.create(persistenceModel),
-    );
-    return UserMapper.toDomain(newEntity);
+    const entity = await this.prisma.user.create({
+      data: UserMapper.toPersistence(data),
+      include: USER_INCLUDE,
+    });
+    return UserMapper.toDomain(entity);
   }
 
   async findManyWithPagination({
@@ -34,52 +30,47 @@ export class UsersRelationalRepository implements UserRepository {
     sortOptions?: SortUserDto[] | null;
     paginationOptions: IPaginationOptions;
   }): Promise<User[]> {
-    const where: FindOptionsWhere<UserEntity> = {};
+    const where: Record<string, unknown> = { deletedAt: null };
+
     if (filterOptions?.roles?.length) {
-      where.role = filterOptions.roles.map((role) => ({
-        id: Number(role.id),
-      }));
+      where.roleId = { in: filterOptions.roles.map((r) => Number(r.id)) };
     }
 
-    const entities = await this.usersRepository.find({
+    const entities = await this.prisma.user.findMany({
+      where,
+      include: USER_INCLUDE,
       skip: (paginationOptions.page - 1) * paginationOptions.limit,
       take: paginationOptions.limit,
-      where: where,
-      order: sortOptions?.reduce(
-        (accumulator, sort) => ({
-          ...accumulator,
-          [sort.orderBy]: sort.order,
-        }),
-        {},
-      ),
+      orderBy: sortOptions?.map((s) => ({
+        [s.orderBy]: s.order.toLowerCase(),
+      })),
     });
 
-    return entities.map((user) => UserMapper.toDomain(user));
+    return entities.map((e) => UserMapper.toDomain(e));
   }
 
   async findById(id: User['id']): Promise<NullableType<User>> {
-    const entity = await this.usersRepository.findOne({
-      where: { id: Number(id) },
+    const entity = await this.prisma.user.findFirst({
+      where: { id: Number(id), deletedAt: null },
+      include: USER_INCLUDE,
     });
-
     return entity ? UserMapper.toDomain(entity) : null;
   }
 
   async findByIds(ids: User['id'][]): Promise<User[]> {
-    const entities = await this.usersRepository.find({
-      where: { id: In(ids) },
+    const entities = await this.prisma.user.findMany({
+      where: { id: { in: ids.map(Number) }, deletedAt: null },
+      include: USER_INCLUDE,
     });
-
-    return entities.map((user) => UserMapper.toDomain(user));
+    return entities.map((e) => UserMapper.toDomain(e));
   }
 
   async findByEmail(email: User['email']): Promise<NullableType<User>> {
     if (!email) return null;
-
-    const entity = await this.usersRepository.findOne({
-      where: { email },
+    const entity = await this.prisma.user.findFirst({
+      where: { email, deletedAt: null },
+      include: USER_INCLUDE,
     });
-
     return entity ? UserMapper.toDomain(entity) : null;
   }
 
@@ -91,36 +82,39 @@ export class UsersRelationalRepository implements UserRepository {
     provider: User['provider'];
   }): Promise<NullableType<User>> {
     if (!socialId || !provider) return null;
-
-    const entity = await this.usersRepository.findOne({
-      where: { socialId, provider },
+    const entity = await this.prisma.user.findFirst({
+      where: { socialId, provider, deletedAt: null },
+      include: USER_INCLUDE,
     });
-
     return entity ? UserMapper.toDomain(entity) : null;
   }
 
   async update(id: User['id'], payload: Partial<User>): Promise<User> {
-    const entity = await this.usersRepository.findOne({
-      where: { id: Number(id) },
+    const existing = await this.prisma.user.findFirst({
+      where: { id: Number(id), deletedAt: null },
+      include: USER_INCLUDE,
     });
+    if (!existing) throw new Error('User not found');
 
-    if (!entity) {
-      throw new Error('User not found');
-    }
+    const merged = { ...UserMapper.toDomain(existing), ...payload };
+    const persistenceData = UserMapper.toPersistence(merged);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id: _, ...updateData } = {
+      ...persistenceData,
+    } as typeof persistenceData & { id: never };
 
-    const updatedEntity = await this.usersRepository.save(
-      this.usersRepository.create(
-        UserMapper.toPersistence({
-          ...UserMapper.toDomain(entity),
-          ...payload,
-        }),
-      ),
-    );
-
-    return UserMapper.toDomain(updatedEntity);
+    const entity = await this.prisma.user.update({
+      where: { id: Number(id) },
+      data: updateData,
+      include: USER_INCLUDE,
+    });
+    return UserMapper.toDomain(entity);
   }
 
   async remove(id: User['id']): Promise<void> {
-    await this.usersRepository.softDelete(id);
+    await this.prisma.user.update({
+      where: { id: Number(id) },
+      data: { deletedAt: new Date() },
+    });
   }
 }

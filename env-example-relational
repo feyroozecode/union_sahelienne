@@ -7,20 +7,21 @@ APP_HEADER_LANGUAGE=x-custom-lang
 FRONTEND_DOMAIN=http://localhost:3000
 BACKEND_DOMAIN=http://localhost:3000
 
+# DATABASE_TYPE is only used to detect document (mongodb) vs relational databases
 DATABASE_TYPE=postgres
 DATABASE_HOST=postgres
 DATABASE_PORT=5432
 DATABASE_USERNAME=root
 DATABASE_PASSWORD=secret
 DATABASE_NAME=api
-DATABASE_SYNCHRONIZE=false
 DATABASE_MAX_CONNECTIONS=100
 DATABASE_SSL_ENABLED=false
 DATABASE_REJECT_UNAUTHORIZED=false
 DATABASE_CA=
 DATABASE_KEY=
 DATABASE_CERT=
-DATABASE_URL=
+# Required by Prisma — format: postgresql://user:password@host:port/dbname
+DATABASE_URL=postgresql://root:secret@postgres:5432/api
 
 # Support "local", "s3", "s3-presigned"
 FILE_DRIVER=local

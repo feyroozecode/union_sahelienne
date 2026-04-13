@@ -1,46 +1,32 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { FileEntity } from '../entities/file.entity';
-import { In, Repository } from 'typeorm';
+import { PrismaService } from '../../../../../database/prisma.service';
 import { FileRepository } from '../../file.repository';
-
 import { FileMapper } from '../mappers/file.mapper';
 import { FileType } from '../../../../domain/file';
 import { NullableType } from '../../../../../utils/types/nullable.type';
 
 @Injectable()
 export class FileRelationalRepository implements FileRepository {
-  constructor(
-    @InjectRepository(FileEntity)
-    private readonly fileRepository: Repository<FileEntity>,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(data: FileType): Promise<FileType> {
-    const persistenceModel = FileMapper.toPersistence(data);
-    const entity = await this.fileRepository.save(
-      this.fileRepository.create(persistenceModel),
-    );
-
+    const entity = await this.prisma.file.create({
+      data: FileMapper.toPersistence(data),
+    });
     return FileMapper.toDomain(entity);
   }
 
   async findById(id: FileType['id']): Promise<NullableType<FileType>> {
-    const entity = await this.fileRepository.findOne({
-      where: {
-        id: id,
-      },
+    const entity = await this.prisma.file.findUnique({
+      where: { id },
     });
-
     return entity ? FileMapper.toDomain(entity) : null;
   }
 
   async findByIds(ids: FileType['id'][]): Promise<FileType[]> {
-    const entities = await this.fileRepository.find({
-      where: {
-        id: In(ids),
-      },
+    const entities = await this.prisma.file.findMany({
+      where: { id: { in: ids } },
     });
-
-    return entities.map((entity) => FileMapper.toDomain(entity));
+    return entities.map((e) => FileMapper.toDomain(e));
   }
 }

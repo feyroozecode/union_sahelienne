@@ -1,4 +1,70 @@
+# Project Changelog — Union Sahélienne API
 
+> Entries below are added by the AI Brain Protocol after each task. Format: `[YYYY-MM-DD HH:mm]` WAT (UTC+1).
+
+---
+
+## [2026-04-13 19:30] - Migrate relational layer from TypeORM to Prisma (v7)
+
+### What changed
+
+- Installed `@prisma/client`, `prisma`, `@prisma/adapter-pg` (Prisma 7)
+- Created `prisma/schema.prisma` with models: Role, Status, File, User, Session
+- Created `prisma.config.ts` for Prisma CLI configuration
+- Created `src/database/prisma.service.ts` and `src/database/prisma.module.ts` (@Global)
+- Replaced `TypeOrmModule` with `PrismaModule` in `app.module.ts`
+- Deleted all 5 TypeORM entity files and `typeorm-config.service.ts`, `data-source.ts`
+- Updated 3 mappers to use `@prisma/client` types (`UserWithRelations`, `SessionWithUser`)
+- Updated 3 repositories to use `PrismaService` with explicit soft-delete (`deletedAt: null`) filters
+- Updated 3 relational-persistence modules (removed `TypeOrmModule.forFeature`)
+- Updated all 7 seed files to use `PrismaService.upsert` pattern
+- Removed `typeorm` and `@nestjs/typeorm` from dependencies
+- Added `prisma:generate`, `prisma:migrate:dev`, `prisma:migrate:deploy` scripts to `package.json`
+- Updated `env-example-relational` to include `DATABASE_URL`
+
+### Why
+
+- Prisma provides better type safety, cleaner query API, and built-in migration tooling
+- Service layer unchanged — hexagonal architecture kept intact
+
+### Files modified
+
+- `prisma/schema.prisma` — new
+- `prisma.config.ts` — new
+- `src/database/prisma.service.ts` — new
+- `src/database/prisma.module.ts` — new
+- `src/app.module.ts` — replaced TypeOrmModule with PrismaModule
+- `src/utils/relational-entity-helper.ts` — removed TypeORM BaseEntity dependency
+- `src/database/config/database-config.type.ts` — removed `type`, `synchronize`
+- `src/database/config/database.config.ts` — removed TypeORM-specific validators
+- `src/users/infrastructure/persistence/relational/mappers/user.mapper.ts`
+- `src/session/infrastructure/persistence/relational/mappers/session.mapper.ts`
+- `src/files/infrastructure/persistence/relational/mappers/file.mapper.ts`
+- `src/users/infrastructure/persistence/relational/repositories/user.repository.ts`
+- `src/session/infrastructure/persistence/relational/repositories/session.repository.ts`
+- `src/files/infrastructure/persistence/relational/repositories/file.repository.ts`
+- All 3 `relational-persistence.module.ts` files
+- All 7 seed files under `src/database/seeds/relational/`
+- `env-example-relational`, `CLAUDE.md`, `package.json`
+- Deleted: 5 `*.entity.ts`, `typeorm-config.service.ts`, `data-source.ts`, `migrations/` TypeORM file
+
+---
+
+## [2026-04-13 18:00] - Add AI Brain Protocol to CLAUDE.md
+
+### What changed
+
+- Added AI Brain Protocol section to `CLAUDE.md` requiring brainstorm → confirm → log workflow before any non-trivial task.
+
+### Why
+
+- Ensures all architectural decisions are documented and user-approved before implementation.
+
+### Files modified
+
+- `CLAUDE.md` — added AI Brain Protocol section
+
+---
 
 ## [1.2.0](https://github.com/brocoders/nestjs-boilerplate/compare/1.1.0...1.2.0) (2024-06-05)
 

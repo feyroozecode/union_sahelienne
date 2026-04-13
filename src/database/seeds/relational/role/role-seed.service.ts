@@ -1,45 +1,22 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { RoleEntity } from '../../../../roles/infrastructure/persistence/relational/entities/role.entity';
+import { PrismaService } from '../../../prisma.service';
 import { RoleEnum } from '../../../../roles/roles.enum';
 
 @Injectable()
 export class RoleSeedService {
-  constructor(
-    @InjectRepository(RoleEntity)
-    private repository: Repository<RoleEntity>,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async run() {
-    const countUser = await this.repository.count({
-      where: {
-        id: RoleEnum.user,
-      },
+    await this.prisma.role.upsert({
+      where: { id: RoleEnum.user },
+      update: {},
+      create: { id: RoleEnum.user, name: 'User' },
     });
 
-    if (!countUser) {
-      await this.repository.save(
-        this.repository.create({
-          id: RoleEnum.user,
-          name: 'User',
-        }),
-      );
-    }
-
-    const countAdmin = await this.repository.count({
-      where: {
-        id: RoleEnum.admin,
-      },
+    await this.prisma.role.upsert({
+      where: { id: RoleEnum.admin },
+      update: {},
+      create: { id: RoleEnum.admin, name: 'Admin' },
     });
-
-    if (!countAdmin) {
-      await this.repository.save(
-        this.repository.create({
-          id: RoleEnum.admin,
-          name: 'Admin',
-        }),
-      );
-    }
   }
 }

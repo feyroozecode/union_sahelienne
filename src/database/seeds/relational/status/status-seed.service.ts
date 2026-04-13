@@ -1,30 +1,22 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { StatusEntity } from '../../../../statuses/infrastructure/persistence/relational/entities/status.entity';
+import { PrismaService } from '../../../prisma.service';
 import { StatusEnum } from '../../../../statuses/statuses.enum';
 
 @Injectable()
 export class StatusSeedService {
-  constructor(
-    @InjectRepository(StatusEntity)
-    private repository: Repository<StatusEntity>,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async run() {
-    const count = await this.repository.count();
+    await this.prisma.status.upsert({
+      where: { id: StatusEnum.active },
+      update: {},
+      create: { id: StatusEnum.active, name: 'Active' },
+    });
 
-    if (!count) {
-      await this.repository.save([
-        this.repository.create({
-          id: StatusEnum.active,
-          name: 'Active',
-        }),
-        this.repository.create({
-          id: StatusEnum.inactive,
-          name: 'Inactive',
-        }),
-      ]);
-    }
+    await this.prisma.status.upsert({
+      where: { id: StatusEnum.inactive },
+      update: {},
+      create: { id: StatusEnum.inactive, name: 'Inactive' },
+    });
   }
 }

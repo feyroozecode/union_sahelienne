@@ -1,0 +1,54 @@
+
+Meet R1 - User Story
+
+Authentification
+LOGIN
+Connexion avec Email /Mot de passe
+OTP Email
+Numéro de Phone / Mot de passe 
+OTP par SMS/Whatsapp
+OTP Required après 30 jr de déconnexion 
+Création de Compte 
+Création de compte avec Email et ou Téléphone
+Formulaire : Nom, prénoms, âge, Profession, Pays/Ville
+Précision du Genre (Obligatoire)
+Valdition OTP via EMail/Phone (SMS, Whatsapp)
+Définir votre mot de passe 
+Valider -> Écran ‘Accueil
+Compléter le Profil pour être Validé, Voir les autres profils flouté(Infos invisible)
+Réinitialiser son Mot de Passes ou Mot de passes Oublié
+L'utilisateur clique Mot de passes oublié (Page Login) / Changer Mot de passes (Dans profils )
+On demande à l'utilisateur de saisir un COde OTP envoyé sur son Email/Phone
+OTP validé -> Ecran Définir moT DE passe, mot de passes définie
+Mot de passes validé redirigé vers page LOGIN 
+
+Profils Utilisateurs 
+Renseigner les Informations : 
+Situation matrimoniale(Célibataire, Marié, Divorcé, ..)
+Nombre d'enfants (si applicable )
+Ethnie (si applicable)
+Résidence(Connue via ajout de Ville/Pays)
+Profils Recherché: 
+Age souhaité
+Situation matrimoniale(Ex: Célibataie)
+Autres critère(Préciser, sérieux, responsable, musluman )
+Facultatif :
+Groupe sanguin 
+Test VIH 
+Hépatite
+Accepter les Conditions d'utilisation (Obligatoire pour passer au paiement et validation )
+Paiement pour Validation 
+Paiement reçu manuelle (Payer et uploader le réçu)
+Choix TYPE DE PAIEMENT exemple STA
+Infos Notice: Numero de depot et NB:Seulement compte à compte accepté
+Paiement Mobile Money via Wave 
+une fois le paiement validé , Admin valide le compte (Estimation 24h pour validation)
+Utilisateur connecté avec Compte validé 
+Mise en relation
+NB: Contraintes 3 Mise en Relation Possible, Le compte à rebours marche une fois les 2 interressé en discussion
+Listes des Profils basé sur le genre (Un Homme intéressé voie les femmes et Vice-Versa)
+Voir Profile
+Détails Complets 
+Bouton “Je suis intéressé” -> Envoi Requête à la personne B 
+Notification de la requête Une fois accepté
+le Chat est ouvert et la discussion peut débuter 

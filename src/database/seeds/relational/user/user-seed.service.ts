@@ -1,78 +1,54 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-
-import { Repository } from 'typeorm';
+import { PrismaService } from '../../../prisma.service';
 import bcrypt from 'bcryptjs';
 import { RoleEnum } from '../../../../roles/roles.enum';
 import { StatusEnum } from '../../../../statuses/statuses.enum';
-import { UserEntity } from '../../../../users/infrastructure/persistence/relational/entities/user.entity';
 
 @Injectable()
 export class UserSeedService {
-  constructor(
-    @InjectRepository(UserEntity)
-    private repository: Repository<UserEntity>,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async run() {
-    const countAdmin = await this.repository.count({
-      where: {
-        role: {
-          id: RoleEnum.admin,
-        },
-      },
+    const adminExists = await this.prisma.user.findFirst({
+      where: { roleId: RoleEnum.admin, deletedAt: null },
     });
 
-    if (!countAdmin) {
+    if (!adminExists) {
       const salt = await bcrypt.genSalt();
       const password = await bcrypt.hash('secret', salt);
 
-      await this.repository.save(
-        this.repository.create({
+      await this.prisma.user.create({
+        data: {
           firstName: 'Super',
           lastName: 'Admin',
           email: 'admin@example.com',
           password,
-          role: {
-            id: RoleEnum.admin,
-            name: 'Admin',
-          },
-          status: {
-            id: StatusEnum.active,
-            name: 'Active',
-          },
-        }),
-      );
+          provider: 'email',
+          roleId: RoleEnum.admin,
+          statusId: StatusEnum.active,
+        },
+      });
     }
 
-    const countUser = await this.repository.count({
-      where: {
-        role: {
-          id: RoleEnum.user,
-        },
-      },
+    const userExists = await this.prisma.user.findFirst({
+      where: { roleId: RoleEnum.user, deletedAt: null },
     });
 
-    if (!countUser) {
+    if (!userExists) {
       const salt = await bcrypt.genSalt();
       const password = await bcrypt.hash('secret', salt);
 
-      await this.repository.save(
-        this.repository.create({
+      await this.prisma.user.create({
+        data: {
           firstName: 'John',
           lastName: 'Doe',
           email: 'john.doe@example.com',
           password,
-          role: {
-            id: RoleEnum.user,
-            name: 'Admin',
-          },
-          status: {
-            id: StatusEnum.active,
-            name: 'Active',
-          },
-        }),
-      );
+          provider: 'email',
+          roleId: RoleEnum.user,
+          statusId: StatusEnum.active,
+        },
+      });
     }
   }
 }

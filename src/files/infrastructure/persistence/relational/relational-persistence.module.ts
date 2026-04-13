@@ -1,11 +1,10 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { FileEntity } from './entities/file.entity';
 import { FileRepository } from '../file.repository';
 import { FileRelationalRepository } from './repositories/file.repository';
+import { PrismaModule } from '../../../../database/prisma.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([FileEntity])],
+  imports: [PrismaModule],
   providers: [
     {
       provide: FileRepository,

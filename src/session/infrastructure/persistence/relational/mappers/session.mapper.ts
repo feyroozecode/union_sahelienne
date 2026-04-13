@@ -1,10 +1,24 @@
-import { UserEntity } from '../../../../../users/infrastructure/persistence/relational/entities/user.entity';
+import {
+  Prisma,
+  Session as PrismaSession,
+  User as PrismaUser,
+  File as PrismaFile,
+  Role as PrismaRole,
+  Status as PrismaStatus,
+} from '@prisma/client';
 import { UserMapper } from '../../../../../users/infrastructure/persistence/relational/mappers/user.mapper';
 import { Session } from '../../../../domain/session';
-import { SessionEntity } from '../entities/session.entity';
+
+export type SessionWithUser = PrismaSession & {
+  user: PrismaUser & {
+    photo: PrismaFile | null;
+    role: PrismaRole | null;
+    status: PrismaStatus | null;
+  };
+};
 
 export class SessionMapper {
-  static toDomain(raw: SessionEntity): Session {
+  static toDomain(raw: SessionWithUser): Session {
     const domainEntity = new Session();
     domainEntity.id = raw.id;
     if (raw.user) {
@@ -13,24 +27,21 @@ export class SessionMapper {
     domainEntity.hash = raw.hash;
     domainEntity.createdAt = raw.createdAt;
     domainEntity.updatedAt = raw.updatedAt;
-    domainEntity.deletedAt = raw.deletedAt;
+    domainEntity.deletedAt = (raw.deletedAt ?? null) as Date;
     return domainEntity;
   }
 
-  static toPersistence(domainEntity: Session): SessionEntity {
-    const user = new UserEntity();
-    user.id = Number(domainEntity.user.id);
-
-    const persistenceEntity = new SessionEntity();
-    if (domainEntity.id && typeof domainEntity.id === 'number') {
-      persistenceEntity.id = domainEntity.id;
-    }
-    persistenceEntity.hash = domainEntity.hash;
-    persistenceEntity.user = user;
-    persistenceEntity.createdAt = domainEntity.createdAt;
-    persistenceEntity.updatedAt = domainEntity.updatedAt;
-    persistenceEntity.deletedAt = domainEntity.deletedAt;
-
-    return persistenceEntity;
+  static toPersistence(
+    domainEntity: Session,
+  ): Prisma.SessionUncheckedCreateInput {
+    return {
+      ...(domainEntity.id && typeof domainEntity.id === 'number'
+        ? { id: domainEntity.id }
+        : {}),
+      hash: domainEntity.hash,
+      userId: Number(domainEntity.user.id),
+      createdAt: domainEntity.createdAt,
+      deletedAt: domainEntity.deletedAt,
+    };
   }
 }

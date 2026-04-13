@@ -1,72 +1,58 @@
-import { FileEntity } from '../../../../../files/infrastructure/persistence/relational/entities/file.entity';
+import {
+  Prisma,
+  User as PrismaUser,
+  File as PrismaFile,
+  Role as PrismaRole,
+  Status as PrismaStatus,
+} from '@prisma/client';
 import { FileMapper } from '../../../../../files/infrastructure/persistence/relational/mappers/file.mapper';
-import { RoleEntity } from '../../../../../roles/infrastructure/persistence/relational/entities/role.entity';
-import { StatusEntity } from '../../../../../statuses/infrastructure/persistence/relational/entities/status.entity';
 import { User } from '../../../../domain/user';
-import { UserEntity } from '../entities/user.entity';
+
+export type UserWithRelations = PrismaUser & {
+  photo: PrismaFile | null;
+  role: PrismaRole | null;
+  status: PrismaStatus | null;
+};
 
 export class UserMapper {
-  static toDomain(raw: UserEntity): User {
+  static toDomain(raw: UserWithRelations): User {
     const domainEntity = new User();
     domainEntity.id = raw.id;
     domainEntity.email = raw.email;
-    domainEntity.password = raw.password;
+    domainEntity.password = raw.password ?? undefined;
     domainEntity.provider = raw.provider;
     domainEntity.socialId = raw.socialId;
     domainEntity.firstName = raw.firstName;
     domainEntity.lastName = raw.lastName;
-    if (raw.photo) {
-      domainEntity.photo = FileMapper.toDomain(raw.photo);
-    }
-    domainEntity.role = raw.role;
-    domainEntity.status = raw.status;
+    domainEntity.photo = raw.photo ? FileMapper.toDomain(raw.photo) : null;
+    domainEntity.role = raw.role
+      ? { id: raw.role.id, name: raw.role.name }
+      : null;
+    domainEntity.status = raw.status
+      ? { id: raw.status.id, name: raw.status.name }
+      : undefined;
     domainEntity.createdAt = raw.createdAt;
     domainEntity.updatedAt = raw.updatedAt;
-    domainEntity.deletedAt = raw.deletedAt;
+    domainEntity.deletedAt = (raw.deletedAt ?? null) as Date;
     return domainEntity;
   }
 
-  static toPersistence(domainEntity: User): UserEntity {
-    let role: RoleEntity | undefined = undefined;
-
-    if (domainEntity.role) {
-      role = new RoleEntity();
-      role.id = Number(domainEntity.role.id);
-    }
-
-    let photo: FileEntity | undefined | null = undefined;
-
-    if (domainEntity.photo) {
-      photo = new FileEntity();
-      photo.id = domainEntity.photo.id;
-      photo.path = domainEntity.photo.path;
-    } else if (domainEntity.photo === null) {
-      photo = null;
-    }
-
-    let status: StatusEntity | undefined = undefined;
-
-    if (domainEntity.status) {
-      status = new StatusEntity();
-      status.id = Number(domainEntity.status.id);
-    }
-
-    const persistenceEntity = new UserEntity();
-    if (domainEntity.id && typeof domainEntity.id === 'number') {
-      persistenceEntity.id = domainEntity.id;
-    }
-    persistenceEntity.email = domainEntity.email;
-    persistenceEntity.password = domainEntity.password;
-    persistenceEntity.provider = domainEntity.provider;
-    persistenceEntity.socialId = domainEntity.socialId;
-    persistenceEntity.firstName = domainEntity.firstName;
-    persistenceEntity.lastName = domainEntity.lastName;
-    persistenceEntity.photo = photo;
-    persistenceEntity.role = role;
-    persistenceEntity.status = status;
-    persistenceEntity.createdAt = domainEntity.createdAt;
-    persistenceEntity.updatedAt = domainEntity.updatedAt;
-    persistenceEntity.deletedAt = domainEntity.deletedAt;
-    return persistenceEntity;
+  static toPersistence(domainEntity: User): Prisma.UserUncheckedCreateInput {
+    return {
+      ...(domainEntity.id && typeof domainEntity.id === 'number'
+        ? { id: domainEntity.id }
+        : {}),
+      email: domainEntity.email,
+      password: domainEntity.password,
+      provider: domainEntity.provider,
+      socialId: domainEntity.socialId,
+      firstName: domainEntity.firstName,
+      lastName: domainEntity.lastName,
+      photoId: domainEntity.photo?.id ?? null,
+      roleId: domainEntity.role ? Number(domainEntity.role.id) : null,
+      statusId: domainEntity.status ? Number(domainEntity.status.id) : null,
+      createdAt: domainEntity.createdAt,
+      deletedAt: domainEntity.deletedAt,
+    };
   }
 }

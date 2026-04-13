@@ -17,8 +17,8 @@ class EnvironmentVariablesValidator {
   @IsString()
   DATABASE_URL: string;
 
-  @ValidateIf((envValues) => !envValues.DATABASE_URL)
   @IsString()
+  @IsOptional()
   DATABASE_TYPE: string;
 
   @ValidateIf((envValues) => !envValues.DATABASE_URL)
@@ -42,10 +42,6 @@ class EnvironmentVariablesValidator {
   @ValidateIf((envValues) => !envValues.DATABASE_URL)
   @IsString()
   DATABASE_USERNAME: string;
-
-  @IsBoolean()
-  @IsOptional()
-  DATABASE_SYNCHRONIZE: boolean;
 
   @IsInt()
   @IsOptional()
@@ -78,7 +74,6 @@ export default registerAs<DatabaseConfig>('database', () => {
   return {
     isDocumentDatabase: ['mongodb'].includes(process.env.DATABASE_TYPE ?? ''),
     url: process.env.DATABASE_URL,
-    type: process.env.DATABASE_TYPE,
     host: process.env.DATABASE_HOST,
     port: process.env.DATABASE_PORT
       ? parseInt(process.env.DATABASE_PORT, 10)
@@ -86,7 +81,6 @@ export default registerAs<DatabaseConfig>('database', () => {
     password: process.env.DATABASE_PASSWORD,
     name: process.env.DATABASE_NAME,
     username: process.env.DATABASE_USERNAME,
-    synchronize: process.env.DATABASE_SYNCHRONIZE === 'true',
     maxConnections: process.env.DATABASE_MAX_CONNECTIONS
       ? parseInt(process.env.DATABASE_MAX_CONNECTIONS, 10)
       : 100,

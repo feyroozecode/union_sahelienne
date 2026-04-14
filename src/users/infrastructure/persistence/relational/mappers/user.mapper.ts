@@ -4,14 +4,17 @@ import {
   File as PrismaFile,
   Role as PrismaRole,
   Status as PrismaStatus,
+  Profile as PrismaProfile,
 } from '@prisma/client';
 import { FileMapper } from '../../../../../files/infrastructure/persistence/relational/mappers/file.mapper';
+import { ProfileMapper } from '../../../../../profiles/infrastructure/persistence/relational/mappers/profile.mapper';
 import { User } from '../../../../domain/user';
 
 export type UserWithRelations = PrismaUser & {
   photo: PrismaFile | null;
   role: PrismaRole | null;
   status: PrismaStatus | null;
+  profile?: PrismaProfile | null;
 };
 
 export class UserMapper {
@@ -19,7 +22,13 @@ export class UserMapper {
     const domainEntity = new User();
     domainEntity.id = raw.id;
     domainEntity.email = raw.email;
+    domainEntity.phone = raw.phone;
     domainEntity.password = raw.password ?? undefined;
+    domainEntity.otpHash = raw.otpHash;
+    domainEntity.otpPurpose = raw.otpPurpose;
+    domainEntity.otpExpiry = raw.otpExpiry;
+    domainEntity.lastOtpAt = raw.lastOtpAt;
+    domainEntity.lastLoginAt = raw.lastLoginAt;
     domainEntity.provider = raw.provider;
     domainEntity.socialId = raw.socialId;
     domainEntity.firstName = raw.firstName;
@@ -31,6 +40,9 @@ export class UserMapper {
     domainEntity.status = raw.status
       ? { id: raw.status.id, name: raw.status.name }
       : undefined;
+    domainEntity.profile = raw.profile
+      ? ProfileMapper.toDomain(raw.profile)
+      : null;
     domainEntity.createdAt = raw.createdAt;
     domainEntity.updatedAt = raw.updatedAt;
     domainEntity.deletedAt = (raw.deletedAt ?? null) as Date;
@@ -43,7 +55,13 @@ export class UserMapper {
         ? { id: domainEntity.id }
         : {}),
       email: domainEntity.email,
+      phone: domainEntity.phone,
       password: domainEntity.password,
+      otpHash: domainEntity.otpHash,
+      otpPurpose: domainEntity.otpPurpose,
+      otpExpiry: domainEntity.otpExpiry,
+      lastOtpAt: domainEntity.lastOtpAt,
+      lastLoginAt: domainEntity.lastLoginAt,
       provider: domainEntity.provider,
       socialId: domainEntity.socialId,
       firstName: domainEntity.firstName,

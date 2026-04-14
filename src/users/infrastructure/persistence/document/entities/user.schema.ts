@@ -23,6 +23,13 @@ export class UserSchemaClass extends EntityDocumentHelper {
   })
   email: string | null;
 
+  @Prop({
+    type: String,
+    unique: true,
+    sparse: true,
+  })
+  phone?: string | null;
+
   @Prop()
   password?: string;
 
@@ -36,6 +43,21 @@ export class UserSchemaClass extends EntityDocumentHelper {
     default: null,
   })
   socialId?: string | null;
+
+  @Prop({ type: String })
+  otpHash?: string | null;
+
+  @Prop({ type: String })
+  otpPurpose?: string | null;
+
+  @Prop({ type: Date })
+  otpExpiry?: Date | null;
+
+  @Prop({ type: Date })
+  lastOtpAt?: Date | null;
+
+  @Prop({ type: Date })
+  lastLoginAt?: Date | null;
 
   @Prop({
     type: String,

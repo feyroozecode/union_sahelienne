@@ -11,6 +11,7 @@ import {
   HttpStatus,
   HttpCode,
   SerializeOptions,
+  Request,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -36,10 +37,9 @@ import { UsersService } from './users.service';
 import { RolesGuard } from '../roles/roles.guard';
 import { infinityPagination } from '../utils/infinity-pagination';
 
-@ApiBearerAuth()
-@Roles(RoleEnum.admin)
-@UseGuards(AuthGuard('jwt'), RolesGuard)
 @ApiTags('Users')
+@ApiBearerAuth()
+@UseGuards(AuthGuard('jwt'))
 @Controller({
   path: 'users',
   version: '1',
@@ -50,6 +50,8 @@ export class UsersController {
   @ApiCreatedResponse({
     type: User,
   })
+  @Roles(RoleEnum.admin)
+  @UseGuards(RolesGuard)
   @SerializeOptions({
     groups: ['admin'],
   })
@@ -68,6 +70,7 @@ export class UsersController {
   @Get()
   @HttpCode(HttpStatus.OK)
   async findAll(
+    @Request() request,
     @Query() query: QueryUserDto,
   ): Promise<InfinityPaginationResponseDto<User>> {
     const page = query?.page ?? 1;
@@ -77,9 +80,8 @@ export class UsersController {
     }
 
     return infinityPagination(
-      await this.usersService.findManyWithPagination({
-        filterOptions: query?.filters,
-        sortOptions: query?.sort,
+      await this.usersService.findVisibleUsersForViewer({
+        viewerId: request.user.id,
         paginationOptions: {
           page,
           limit,
@@ -92,6 +94,8 @@ export class UsersController {
   @ApiOkResponse({
     type: User,
   })
+  @Roles(RoleEnum.admin)
+  @UseGuards(RolesGuard)
   @SerializeOptions({
     groups: ['admin'],
   })
@@ -109,6 +113,8 @@ export class UsersController {
   @ApiOkResponse({
     type: User,
   })
+  @Roles(RoleEnum.admin)
+  @UseGuards(RolesGuard)
   @SerializeOptions({
     groups: ['admin'],
   })
@@ -127,6 +133,8 @@ export class UsersController {
   }
 
   @Delete(':id')
+  @Roles(RoleEnum.admin)
+  @UseGuards(RolesGuard)
   @ApiParam({
     name: 'id',
     type: String,

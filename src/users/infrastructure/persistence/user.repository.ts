@@ -23,6 +23,9 @@ export abstract class UserRepository {
   abstract findById(id: User['id']): Promise<NullableType<User>>;
   abstract findByIds(ids: User['id'][]): Promise<User[]>;
   abstract findByEmail(email: User['email']): Promise<NullableType<User>>;
+  abstract findByPhone(
+    phone: NonNullable<User['phone']>,
+  ): Promise<NullableType<User>>;
   abstract findBySocialIdAndProvider({
     socialId,
     provider,
@@ -30,6 +33,17 @@ export abstract class UserRepository {
     socialId: User['socialId'];
     provider: User['provider'];
   }): Promise<NullableType<User>>;
+  abstract findBrowseUsers({
+    viewerId,
+    paginationOptions,
+    onlyValidated,
+    gender,
+  }: {
+    viewerId: User['id'];
+    paginationOptions: IPaginationOptions;
+    onlyValidated?: boolean;
+    gender?: string;
+  }): Promise<User[]>;
 
   abstract update(
     id: User['id'],

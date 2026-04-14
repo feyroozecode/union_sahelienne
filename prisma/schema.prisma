@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
@@ -31,16 +32,22 @@ model File {
 }
 
 model User {
-  id        Int       @id @default(autoincrement())
-  email     String?   @unique
-  password  String?
-  provider  String    @default("email")
-  socialId  String?
-  firstName String?
-  lastName  String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
+  id          Int       @id @default(autoincrement())
+  email       String?   @unique
+  phone       String?   @unique
+  password    String?
+  provider    String    @default("email")
+  socialId    String?
+  firstName   String?
+  lastName    String?
+  otpHash     String?
+  otpExpiry   DateTime?
+  otpPurpose  String?
+  lastOtpAt   DateTime?
+  lastLoginAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
 
   photo   File?   @relation(fields: [photoId], references: [id])
   photoId String? @unique @db.Uuid
@@ -51,7 +58,11 @@ model User {
   status   Status? @relation(fields: [statusId], references: [id])
   statusId Int?
 
-  sessions Session[]
+  sessions         Session[]
+  profile          Profile?
+  payments         Payment[]
+  requestedMatches Match[] @relation("MatchRequester")
+  targetedMatches  Match[] @relation("MatchTarget")
 
   @@index([socialId])
   @@index([firstName])
@@ -71,4 +82,68 @@ model Session {
 
   @@index([userId])
   @@map("session")
+}
+
+model Profile {
+  id               Int       @id @default(autoincrement())
+  userId           Int       @unique
+  user             User      @relation(fields: [userId], references: [id])
+  gender           String    @default("unspecified")
+  age              Int?
+  profession       String?
+  maritalStatus    String?
+  childrenCount    Int?
+  ethnicity        String?
+  country          String?
+  city             String?
+  bloodType        String?
+  hivTest          Boolean?
+  hepatitisTest    Boolean?
+  searchedAgeMin   Int?
+  searchedAgeMax   Int?
+  searchedMarital  String?
+  searchedCriteria String?
+  termsAcceptedAt  DateTime?
+  isComplete       Boolean   @default(false)
+  isValidated      Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@map("profile")
+}
+
+model Payment {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  user        User      @relation(fields: [userId], references: [id])
+  type        String
+  status      String    @default("pending")
+  receiptPath String?
+  waveRef     String?   @unique
+  amount      Float?
+  validatedAt DateTime?
+  validatedBy Int?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("payment")
+}
+
+model Match {
+  id            Int       @id @default(autoincrement())
+  requesterId   Int
+  requester     User      @relation("MatchRequester", fields: [requesterId], references: [id])
+  targetId      Int
+  target        User      @relation("MatchTarget", fields: [targetId], references: [id])
+  pairKey       String    @unique
+  status        String    @default("pending")
+  chatOpenedAt  DateTime?
+  chatExpiresAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([requesterId])
+  @@index([targetId])
+  @@map("match")
 }

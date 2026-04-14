@@ -12,7 +12,13 @@ export class UserMapper {
     const domainEntity = new User();
     domainEntity.id = raw._id.toString();
     domainEntity.email = raw.email;
+    domainEntity.phone = raw.phone;
     domainEntity.password = raw.password;
+    domainEntity.otpHash = raw.otpHash;
+    domainEntity.otpPurpose = raw.otpPurpose;
+    domainEntity.otpExpiry = raw.otpExpiry;
+    domainEntity.lastOtpAt = raw.lastOtpAt;
+    domainEntity.lastLoginAt = raw.lastLoginAt;
     domainEntity.provider = raw.provider;
     domainEntity.socialId = raw.socialId;
     domainEntity.firstName = raw.firstName;
@@ -68,7 +74,13 @@ export class UserMapper {
       persistenceSchema._id = domainEntity.id;
     }
     persistenceSchema.email = domainEntity.email;
+    persistenceSchema.phone = domainEntity.phone;
     persistenceSchema.password = domainEntity.password;
+    persistenceSchema.otpHash = domainEntity.otpHash;
+    persistenceSchema.otpPurpose = domainEntity.otpPurpose;
+    persistenceSchema.otpExpiry = domainEntity.otpExpiry;
+    persistenceSchema.lastOtpAt = domainEntity.lastOtpAt;
+    persistenceSchema.lastLoginAt = domainEntity.lastLoginAt;
     persistenceSchema.provider = domainEntity.provider;
     persistenceSchema.socialId = domainEntity.socialId;
     persistenceSchema.firstName = domainEntity.firstName;

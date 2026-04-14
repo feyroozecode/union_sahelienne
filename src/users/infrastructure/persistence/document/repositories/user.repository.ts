@@ -75,6 +75,11 @@ export class UsersDocumentRepository implements UserRepository {
     return userObject ? UserMapper.toDomain(userObject) : null;
   }
 
+  async findByPhone(phone: string): Promise<NullableType<User>> {
+    const userObject = await this.usersModel.findOne({ phone });
+    return userObject ? UserMapper.toDomain(userObject) : null;
+  }
+
   async findBySocialIdAndProvider({
     socialId,
     provider,
@@ -113,6 +118,25 @@ export class UsersDocumentRepository implements UserRepository {
     );
 
     return userObject ? UserMapper.toDomain(userObject) : null;
+  }
+
+  async findBrowseUsers({
+    viewerId,
+    paginationOptions,
+  }: {
+    viewerId: User['id'];
+    paginationOptions: IPaginationOptions;
+    onlyValidated?: boolean;
+    gender?: string;
+  }): Promise<User[]> {
+    const userObjects = await this.usersModel
+      .find({
+        _id: { $ne: viewerId },
+      })
+      .skip((paginationOptions.page - 1) * paginationOptions.limit)
+      .limit(paginationOptions.limit);
+
+    return userObjects.map((userObject) => UserMapper.toDomain(userObject));
   }
 
   async remove(id: User['id']): Promise<void> {

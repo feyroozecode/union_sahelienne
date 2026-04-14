@@ -54,6 +54,23 @@ export class UsersService {
       email = createUserDto.email;
     }
 
+    let phone: string | null = null;
+
+    if (createUserDto.phone) {
+      const userObject = await this.usersRepository.findByPhone(
+        createUserDto.phone,
+      );
+      if (userObject) {
+        throw new UnprocessableEntityException({
+          status: HttpStatus.UNPROCESSABLE_ENTITY,
+          errors: {
+            phone: 'phoneAlreadyExists',
+          },
+        });
+      }
+      phone = createUserDto.phone;
+    }
+
     let photo: FileType | null | undefined = undefined;
 
     if (createUserDto.photo?.id) {
@@ -119,6 +136,7 @@ export class UsersService {
       firstName: createUserDto.firstName,
       lastName: createUserDto.lastName,
       email: email,
+      phone,
       password: password,
       photo: photo,
       role: role,
@@ -154,6 +172,10 @@ export class UsersService {
 
   findByEmail(email: User['email']): Promise<NullableType<User>> {
     return this.usersRepository.findByEmail(email);
+  }
+
+  findByPhone(phone: NonNullable<User['phone']>): Promise<NullableType<User>> {
+    return this.usersRepository.findByPhone(phone);
   }
 
   findBySocialIdAndProvider({
@@ -267,12 +289,34 @@ export class UsersService {
       };
     }
 
+    let phone: string | null | undefined = undefined;
+
+    if (updateUserDto.phone) {
+      const userObject = await this.usersRepository.findByPhone(
+        updateUserDto.phone,
+      );
+
+      if (userObject && userObject.id !== id) {
+        throw new UnprocessableEntityException({
+          status: HttpStatus.UNPROCESSABLE_ENTITY,
+          errors: {
+            phone: 'phoneAlreadyExists',
+          },
+        });
+      }
+
+      phone = updateUserDto.phone;
+    } else if (updateUserDto.phone === null) {
+      phone = null;
+    }
+
     return this.usersRepository.update(id, {
       // Do not remove comment below.
       // <updating-property-payload />
       firstName: updateUserDto.firstName,
       lastName: updateUserDto.lastName,
       email,
+      phone,
       password,
       photo,
       role,
@@ -282,7 +326,75 @@ export class UsersService {
     });
   }
 
+  updateAuthState(
+    id: User['id'],
+    payload: Partial<User>,
+  ): Promise<User | null> {
+    return this.usersRepository.update(id, payload);
+  }
+
+  findBrowseUsers({
+    viewerId,
+    onlyValidated,
+    gender,
+    paginationOptions,
+  }: {
+    viewerId: User['id'];
+    onlyValidated?: boolean;
+    gender?: string;
+    paginationOptions: IPaginationOptions;
+  }): Promise<User[]> {
+    return this.usersRepository.findBrowseUsers({
+      viewerId,
+      onlyValidated,
+      gender,
+      paginationOptions,
+    });
+  }
+
+  async findVisibleUsersForViewer({
+    viewerId,
+    paginationOptions,
+  }: {
+    viewerId: User['id'];
+    paginationOptions: IPaginationOptions;
+  }): Promise<User[]> {
+    const viewer = await this.findById(viewerId);
+
+    if (!viewer) {
+      throw new UnprocessableEntityException({
+        status: HttpStatus.UNPROCESSABLE_ENTITY,
+        errors: {
+          user: 'viewerNotFound',
+        },
+      });
+    }
+
+    const users = await this.findBrowseUsers({
+      viewerId,
+      paginationOptions,
+    });
+
+    if (
+      viewer.role?.id?.toString() === RoleEnum.admin.toString() ||
+      viewer.profile?.isValidated
+    ) {
+      return users;
+    }
+
+    return users.map((user) => this.blurUser(user));
+  }
+
   async remove(id: User['id']): Promise<void> {
     await this.usersRepository.remove(id);
+  }
+
+  private blurUser(user: User): User {
+    const blurredUser = Object.assign(new User(), user);
+    blurredUser.email = null;
+    blurredUser.phone = null;
+    blurredUser.photo = null;
+    blurredUser.socialId = null;
+    return blurredUser;
   }
 }

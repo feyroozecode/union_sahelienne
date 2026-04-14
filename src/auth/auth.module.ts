@@ -9,13 +9,17 @@ import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { MailModule } from '../mail/mail.module';
 import { SessionModule } from '../session/session.module';
 import { UsersModule } from '../users/users.module';
+import { OtpModule } from '../otp/otp.module';
+import { ProfilesModule } from '../profiles/profiles.module';
 
 @Module({
   imports: [
     UsersModule,
+    ProfilesModule,
     SessionModule,
     PassportModule,
     MailModule,
+    OtpModule,
     JwtModule.register({}),
   ],
   controllers: [AuthController],

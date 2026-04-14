@@ -4,6 +4,29 @@
 
 ---
 
+## [2026-04-14 22:31] - Fix project launch bugs for local dev
+
+### What changed
+- Fixed `.env`: `DATABASE_HOST`, `MAIL_HOST`, `WORKER_HOST` changed from Docker service names (`postgres`, `maildev`, `redis`) to `localhost`
+- Fixed `.env`: `DATABASE_PORT` changed from `5432` to `5433` (local Homebrew PostgreSQL), `DATABASE_USERNAME` from `root` to `a`, `DATABASE_NAME` to `union_sahelienne`
+- Updated `DATABASE_URL` and `DATABASE_PASSWORD` accordingly (password: `9999`)
+- Created missing initial migration `prisma/migrations/20260413235900_init/migration.sql` — base schema (role, status, file, user, session tables) that subsequent migrations expected
+- Added `previewFeatures = ["driverAdapters"]` to `prisma/schema.prisma` generator block (required by `PrismaPg` adapter)
+- Fixed Mongoose `user.schema.ts` — added explicit `type:` to `@Prop()` for OTP/login date fields (Mongoose can't infer union types)
+
+### Why
+- Project was configured for Docker Compose but Docker is not running locally; local Postgres uses different port/user
+- Migrations failed because the boilerplate's original TypeORM schema was never ported to a Prisma init migration
+- The Mongoose schema error crashed the app at startup even in PostgreSQL mode
+
+### Files modified
+- `.env` — local dev connection settings
+- `prisma/schema.prisma` — added `previewFeatures`
+- `prisma/migrations/20260413235900_init/migration.sql` — new base schema migration
+- `src/users/infrastructure/persistence/document/entities/user.schema.ts` — explicit Prop types
+
+---
+
 ## [2026-04-13 19:30] - Migrate relational layer from TypeORM to Prisma (v7)
 
 ### What changed

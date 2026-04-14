@@ -25,6 +25,9 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { MongooseConfigService } from './database/mongoose-config.service';
 import { DatabaseConfig } from './database/config/database-config.type';
 import { PrismaModule } from './database/prisma.module';
+import { ProfilesModule } from './profiles/profiles.module';
+import { PaymentsModule } from './payments/payments.module';
+import { MatchesModule } from './matches/matches.module';
 
 // <database-block>
 const infrastructureDatabaseModule = (databaseConfig() as DatabaseConfig)
@@ -57,7 +60,7 @@ const infrastructureDatabaseModule = (databaseConfig() as DatabaseConfig)
         fallbackLanguage: configService.getOrThrow('app.fallbackLanguage', {
           infer: true,
         }),
-        loaderOptions: { path: path.join(__dirname, '/i18n/'), watch: true },
+        loaderOptions: { path: path.join(__dirname, '../i18n/'), watch: true },
       }),
       resolvers: [
         {
@@ -85,6 +88,9 @@ const infrastructureDatabaseModule = (databaseConfig() as DatabaseConfig)
     MailModule,
     MailerModule,
     HomeModule,
+    ProfilesModule,
+    PaymentsModule,
+    MatchesModule,
   ],
 })
 export class AppModule {}

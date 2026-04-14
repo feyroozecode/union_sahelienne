@@ -166,4 +166,28 @@ export class MailService {
       },
     });
   }
+
+  async sendOtpCode(
+    mailData: MailData<{
+      code: string;
+      purpose: 'login' | 'register' | 'forgot-password';
+      expiresAt: Date;
+    }>,
+  ): Promise<void> {
+    const purposeLabel =
+      mailData.data.purpose === 'forgot-password'
+        ? 'password reset'
+        : mailData.data.purpose === 'register'
+          ? 'account activation'
+          : 'login verification';
+
+    await this.mailerService.sendMail({
+      to: mailData.to,
+      subject: 'Union Sahelienne OTP code',
+      text: `Your OTP code for ${purposeLabel} is ${mailData.data.code}. It expires at ${mailData.data.expiresAt.toISOString()}.`,
+      html: `<p>Your OTP code for <strong>${purposeLabel}</strong> is <strong>${mailData.data.code}</strong>.</p><p>It expires at ${mailData.data.expiresAt.toISOString()}.</p>`,
+      templatePath: '',
+      context: {},
+    });
+  }
 }

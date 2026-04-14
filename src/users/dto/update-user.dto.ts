@@ -2,7 +2,13 @@ import { PartialType, ApiPropertyOptional } from '@nestjs/swagger';
 import { CreateUserDto } from './create-user.dto';
 
 import { Transform, Type } from 'class-transformer';
-import { IsEmail, IsOptional, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsOptional,
+  IsString,
+  Matches,
+  MinLength,
+} from 'class-validator';
 import { FileDto } from '../../files/dto/file.dto';
 import { RoleDto } from '../../roles/dto/role.dto';
 import { StatusDto } from '../../statuses/dto/status.dto';
@@ -14,6 +20,12 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   @IsOptional()
   @IsEmail()
   email?: string | null;
+
+  @ApiPropertyOptional({ example: '+22790000000', type: String })
+  @IsOptional()
+  @IsString()
+  @Matches(/^\+?[1-9]\d{7,14}$/)
+  phone?: string | null;
 
   @ApiPropertyOptional()
   @IsOptional()

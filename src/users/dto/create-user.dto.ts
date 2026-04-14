@@ -9,7 +9,10 @@ import {
   IsEmail,
   IsNotEmpty,
   IsOptional,
+  IsString,
   MinLength,
+  Matches,
+  ValidateIf,
 } from 'class-validator';
 import { FileDto } from '../../files/dto/file.dto';
 import { RoleDto } from '../../roles/dto/role.dto';
@@ -19,9 +22,16 @@ import { lowerCaseTransformer } from '../../utils/transformers/lower-case.transf
 export class CreateUserDto {
   @ApiProperty({ example: 'test1@example.com', type: String })
   @Transform(lowerCaseTransformer)
+  @ValidateIf((object) => !object.phone)
   @IsNotEmpty()
   @IsEmail()
-  email: string | null;
+  email?: string | null;
+
+  @ApiPropertyOptional({ example: '+22790000000', type: String })
+  @IsOptional()
+  @IsString()
+  @Matches(/^\+?[1-9]\d{7,14}$/)
+  phone?: string | null;
 
   @ApiProperty()
   @MinLength(6)

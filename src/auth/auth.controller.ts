@@ -24,6 +24,11 @@ import { LoginResponseDto } from './dto/login-response.dto';
 import { NullableType } from '../utils/types/nullable.type';
 import { User } from '../users/domain/user';
 import { RefreshResponseDto } from './dto/refresh-response.dto';
+import { AuthPhoneLoginDto } from './dto/auth-phone-login.dto';
+import { AuthOtpSendDto } from './dto/auth-otp-send.dto';
+import { AuthOtpVerifyDto } from './dto/auth-otp-verify.dto';
+import { OtpChallengeResponseDto } from './dto/otp-challenge-response.dto';
+import { AuthResetPasswordWithOtpDto } from './dto/auth-reset-password-with-otp.dto';
 
 @ApiTags('Auth')
 @Controller({
@@ -41,8 +46,21 @@ export class AuthController {
     type: LoginResponseDto,
   })
   @HttpCode(HttpStatus.OK)
-  public login(@Body() loginDto: AuthEmailLoginDto): Promise<LoginResponseDto> {
+  public login(
+    @Body() loginDto: AuthEmailLoginDto,
+  ): Promise<LoginResponseDto | OtpChallengeResponseDto> {
     return this.service.validateLogin(loginDto);
+  }
+
+  @Post('phone/login')
+  @ApiOkResponse({
+    type: LoginResponseDto,
+  })
+  @HttpCode(HttpStatus.OK)
+  public loginWithPhone(
+    @Body() loginDto: AuthPhoneLoginDto,
+  ): Promise<LoginResponseDto | OtpChallengeResponseDto> {
+    return this.service.validatePhoneLogin(loginDto);
   }
 
   @Post('email/register')
@@ -67,6 +85,42 @@ export class AuthController {
     return this.service.confirmNewEmail(confirmEmailDto.hash);
   }
 
+  @Post('otp/send')
+  @ApiOkResponse({
+    type: OtpChallengeResponseDto,
+  })
+  @HttpCode(HttpStatus.OK)
+  sendOtp(
+    @Body() sendOtpDto: AuthOtpSendDto,
+  ): Promise<OtpChallengeResponseDto> {
+    return this.service.sendOtp(sendOtpDto);
+  }
+
+  @Post('otp/verify')
+  @ApiOkResponse({
+    type: LoginResponseDto,
+  })
+  @HttpCode(HttpStatus.OK)
+  verifyOtp(@Body() verifyOtpDto: AuthOtpVerifyDto): Promise<LoginResponseDto> {
+    return this.service.verifyOtp(verifyOtpDto);
+  }
+
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  forgotPasswordWithOtp(
+    @Body() forgotPasswordDto: AuthForgotPasswordDto,
+  ): Promise<OtpChallengeResponseDto> {
+    return this.service.forgotPasswordWithOtp(forgotPasswordDto);
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  resetPasswordWithOtp(
+    @Body() resetPasswordDto: AuthResetPasswordWithOtpDto,
+  ): Promise<void> {
+    return this.service.resetPasswordWithOtp(resetPasswordDto);
+  }
+
   @Post('forgot/password')
   @HttpCode(HttpStatus.NO_CONTENT)
   async forgotPassword(
@@ -77,7 +131,9 @@ export class AuthController {
 
   @Post('reset/password')
   @HttpCode(HttpStatus.NO_CONTENT)
-  resetPassword(@Body() resetPasswordDto: AuthResetPasswordDto): Promise<void> {
+  resetPasswordByHash(
+    @Body() resetPasswordDto: AuthResetPasswordDto,
+  ): Promise<void> {
     return this.service.resetPassword(
       resetPasswordDto.hash,
       resetPasswordDto.password,

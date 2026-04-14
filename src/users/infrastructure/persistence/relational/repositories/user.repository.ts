@@ -7,7 +7,12 @@ import { NullableType } from '../../../../../utils/types/nullable.type';
 import { FilterUserDto, SortUserDto } from '../../../../dto/query-user.dto';
 import { IPaginationOptions } from '../../../../../utils/types/pagination-options';
 
-const USER_INCLUDE = { photo: true, role: true, status: true } as const;
+const USER_INCLUDE = {
+  photo: true,
+  role: true,
+  status: true,
+  profile: true,
+} as const;
 
 @Injectable()
 export class UsersRelationalRepository implements UserRepository {
@@ -74,6 +79,14 @@ export class UsersRelationalRepository implements UserRepository {
     return entity ? UserMapper.toDomain(entity) : null;
   }
 
+  async findByPhone(phone: string): Promise<NullableType<User>> {
+    const entity = await this.prisma.user.findFirst({
+      where: { phone, deletedAt: null },
+      include: USER_INCLUDE,
+    });
+    return entity ? UserMapper.toDomain(entity) : null;
+  }
+
   async findBySocialIdAndProvider({
     socialId,
     provider,
@@ -87,6 +100,46 @@ export class UsersRelationalRepository implements UserRepository {
       include: USER_INCLUDE,
     });
     return entity ? UserMapper.toDomain(entity) : null;
+  }
+
+  async findBrowseUsers({
+    viewerId,
+    paginationOptions,
+    onlyValidated,
+    gender,
+  }: {
+    viewerId: User['id'];
+    paginationOptions: IPaginationOptions;
+    onlyValidated?: boolean;
+    gender?: string;
+  }): Promise<User[]> {
+    const profileFilter: Record<string, unknown> = {};
+
+    if (onlyValidated) {
+      profileFilter.isValidated = true;
+    }
+
+    if (gender) {
+      profileFilter.gender = gender;
+    }
+
+    const entities = await this.prisma.user.findMany({
+      where: {
+        deletedAt: null,
+        id: { not: Number(viewerId) },
+        profile: Object.keys(profileFilter).length
+          ? { is: profileFilter }
+          : { isNot: null },
+      },
+      include: USER_INCLUDE,
+      skip: (paginationOptions.page - 1) * paginationOptions.limit,
+      take: paginationOptions.limit,
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return entities.map((entity) => UserMapper.toDomain(entity));
   }
 
   async update(id: User['id'], payload: Partial<User>): Promise<User> {

@@ -103,11 +103,20 @@ model Profile {
   searchedAgeMax   Int?
   searchedMarital  String?
   searchedCriteria String?
-  termsAcceptedAt  DateTime?
-  isComplete       Boolean   @default(false)
-  isValidated      Boolean   @default(false)
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  termsAcceptedAt     DateTime?
+  isComplete          Boolean   @default(false)
+  isValidated         Boolean   @default(false)
+
+  identityDocType     String?
+  identityDocPath     String?
+  isIdentityVerified  Boolean   @default(false)
+
+  subscriptionType    String?
+  matchCreditsTotal   Int       @default(0)
+  matchCreditsUsed    Int       @default(0)
+
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   @@map("profile")
 }
@@ -140,6 +149,7 @@ model Match {
   status        String    @default("pending")
   chatOpenedAt  DateTime?
   chatExpiresAt DateTime?
+  cooldownUntil DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

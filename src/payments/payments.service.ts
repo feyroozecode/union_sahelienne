@@ -7,12 +7,15 @@ import { AccountValidationService } from '../account-validation/account-validati
 import { InitiateWavePaymentDto } from './dto/initiate-wave-payment.dto';
 import { WaveCallbackDto } from './dto/wave-callback.dto';
 import { WaveInitiateResponseDto } from './dto/wave-initiate-response.dto';
+import { ProfileRepository } from '../profiles/infrastructure/persistence/profile.repository';
 
 const PAYMENT_TYPE_MANUAL = 'manual';
 const PAYMENT_TYPE_WAVE = 'wave';
 const PAYMENT_STATUS_PENDING = 'pending';
 const PAYMENT_STATUS_VALIDATED = 'validated';
 const PAYMENT_STATUS_REJECTED = 'rejected';
+const SUBSCRIPTION_LITE = 'lite';
+const LITE_MATCH_CREDITS = 3;
 
 @Injectable()
 export class PaymentsService {
@@ -20,6 +23,7 @@ export class PaymentsService {
     private readonly paymentRepository: PaymentRepository,
     private readonly filesLocalService: FilesLocalService,
     private readonly accountValidationService: AccountValidationService,
+    private readonly profileRepository: ProfileRepository,
   ) {}
 
   async createManualPayment(
@@ -89,6 +93,17 @@ export class PaymentsService {
     return this.paymentRepository.findByUserId(userId);
   }
 
+  async getMyPaymentStatus(
+    userId: number,
+  ): Promise<{ status: string; payment: Payment | null }> {
+    const payments = await this.paymentRepository.findByUserId(userId);
+    if (!payments.length) {
+      return { status: 'none', payment: null };
+    }
+    const latest = payments[0];
+    return { status: latest.status, payment: latest };
+  }
+
   async validatePayment(
     id: Payment['id'],
     adminUserId: number,
@@ -111,6 +126,15 @@ export class PaymentsService {
     await this.accountValidationService.syncProfileValidationState(
       payment.userId,
     );
+
+    // Assign LITE subscription credits on first validated payment
+    const profile = await this.profileRepository.findByUserId(payment.userId);
+    if (profile && !profile.subscriptionType) {
+      await this.profileRepository.update(profile.id, {
+        subscriptionType: SUBSCRIPTION_LITE,
+        matchCreditsTotal: LITE_MATCH_CREDITS,
+      });
+    }
 
     return updated;
   }

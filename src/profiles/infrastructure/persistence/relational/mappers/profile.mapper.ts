@@ -24,6 +24,12 @@ export class ProfileMapper {
     domainEntity.termsAcceptedAt = raw.termsAcceptedAt;
     domainEntity.isComplete = raw.isComplete;
     domainEntity.isValidated = raw.isValidated;
+    domainEntity.identityDocType = raw.identityDocType;
+    domainEntity.identityDocPath = raw.identityDocPath;
+    domainEntity.isIdentityVerified = raw.isIdentityVerified;
+    domainEntity.subscriptionType = raw.subscriptionType;
+    domainEntity.matchCreditsTotal = raw.matchCreditsTotal;
+    domainEntity.matchCreditsUsed = raw.matchCreditsUsed;
     domainEntity.createdAt = raw.createdAt;
     domainEntity.updatedAt = raw.updatedAt;
     return domainEntity;
@@ -82,6 +88,24 @@ export class ProfileMapper {
         : {}),
       ...(domainEntity.isValidated !== undefined
         ? { isValidated: domainEntity.isValidated }
+        : {}),
+      ...(domainEntity.identityDocType !== undefined
+        ? { identityDocType: domainEntity.identityDocType }
+        : {}),
+      ...(domainEntity.identityDocPath !== undefined
+        ? { identityDocPath: domainEntity.identityDocPath }
+        : {}),
+      ...(domainEntity.isIdentityVerified !== undefined
+        ? { isIdentityVerified: domainEntity.isIdentityVerified }
+        : {}),
+      ...(domainEntity.subscriptionType !== undefined
+        ? { subscriptionType: domainEntity.subscriptionType }
+        : {}),
+      ...(domainEntity.matchCreditsTotal !== undefined
+        ? { matchCreditsTotal: domainEntity.matchCreditsTotal }
+        : {}),
+      ...(domainEntity.matchCreditsUsed !== undefined
+        ? { matchCreditsUsed: domainEntity.matchCreditsUsed }
         : {}),
       ...(domainEntity.createdAt ? { createdAt: domainEntity.createdAt } : {}),
       ...(domainEntity.updatedAt ? { updatedAt: domainEntity.updatedAt } : {}),

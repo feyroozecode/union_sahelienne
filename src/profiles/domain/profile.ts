@@ -91,6 +91,32 @@ export class Profile {
   @ApiProperty()
   isValidated: boolean;
 
+  @ApiPropertyOptional({
+    example: 'passport',
+  })
+  identityDocType?: string | null;
+
+  @ApiPropertyOptional()
+  identityDocPath?: string | null;
+
+  @ApiProperty()
+  isIdentityVerified: boolean;
+
+  @ApiPropertyOptional({
+    example: 'lite',
+  })
+  subscriptionType?: string | null;
+
+  @ApiProperty({
+    example: 3,
+  })
+  matchCreditsTotal: number;
+
+  @ApiProperty({
+    example: 0,
+  })
+  matchCreditsUsed: number;
+
   @ApiProperty()
   createdAt: Date;
 

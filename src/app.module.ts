@@ -28,6 +28,7 @@ import { PrismaModule } from './database/prisma.module';
 import { ProfilesModule } from './profiles/profiles.module';
 import { PaymentsModule } from './payments/payments.module';
 import { MatchesModule } from './matches/matches.module';
+import { AdminModule } from './admin/admin.module';
 
 // <database-block>
 const infrastructureDatabaseModule = (databaseConfig() as DatabaseConfig)
@@ -91,6 +92,7 @@ const infrastructureDatabaseModule = (databaseConfig() as DatabaseConfig)
     ProfilesModule,
     PaymentsModule,
     MatchesModule,
+    AdminModule,
   ],
 })
 export class AppModule {}

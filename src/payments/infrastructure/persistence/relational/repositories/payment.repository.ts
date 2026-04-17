@@ -46,6 +46,14 @@ export class PaymentRelationalRepository implements PaymentRepository {
     return entities.map((entity) => PaymentMapper.toDomain(entity));
   }
 
+  async findPending(): Promise<Payment[]> {
+    const entities = await this.prisma.payment.findMany({
+      where: { status: 'pending' },
+      orderBy: { createdAt: 'asc' },
+    });
+    return entities.map((entity) => PaymentMapper.toDomain(entity));
+  }
+
   async hasValidatedPayment(userId: number): Promise<boolean> {
     const payment = await this.prisma.payment.findFirst({
       where: {

@@ -4,6 +4,67 @@
 
 ---
 
+## [2026-04-17 15:50] - Full-stack onboarding implementation: missing features + admin + seed data
+
+### What changed
+- **Prisma schema** — Added to Profile: `identityDocType`, `identityDocPath`, `isIdentityVerified`, `subscriptionType`, `matchCreditsTotal`, `matchCreditsUsed`. Added to Match: `cooldownUntil`. Migration `add_identity_subscription_cooldown` applied
+- **Match module** — Added `interruptMatch()` (sets status=interrupted, cooldownUntil=+14 days). Added `findMatchRequests()` (incoming pending requests). New endpoints: `PATCH /matches/:id/interrupt`, `GET /matches/requests`
+- **Abstract MatchRepository** — Added `findPendingByTargetId()` method + relational implementation
+- **Profile domain + mapper** — Updated to include all 7 new fields with toDomain/toPersistence coverage
+- **profiles.service.ts** — Payload to `profileRepository.create()` now includes all new required fields with safe defaults
+- **Payments** — `validatePayment()` now assigns LITE subscription (3 credits) on first validated payment. Added `getMyPaymentStatus()` service method + `GET /payments/me/status` endpoint (for polling)
+- **Abstract PaymentRepository** — Added `findPending()` method + relational implementation
+- **Admin module** — New `src/admin/` with `AdminController`, `AdminService`, `AdminModule`. Endpoints: `GET /admin/stats`, `GET /admin/payments/pending`, `GET /admin/users`, `PATCH /admin/profiles/:id/verify-identity`. All admin-only (RoleGuard)
+- **Seed data** — Rewrote `user-seed.service.ts` with: admin `admin@union-sahelienne.com/Admin@2026!` + 12 West African test users (various validation states, payments, matches). 3 seeded accepted matches with chat windows and credit tracking
+
+### Why
+- Completing all business logic from the approved full-stack onboarding plan
+- Admin endpoints needed for payment validation and identity verification flows
+- Seed data needed for end-to-end testing of all user states
+
+### Files modified
+- `prisma/schema.prisma` — New fields on Profile and Match
+- `prisma/migrations/20260417142515_add_identity_subscription_cooldown/` — New migration
+- `src/matches/domain/match.ts` — Added cooldownUntil field
+- `src/matches/infrastructure/persistence/match.repository.ts` — Added findPendingByTargetId abstract
+- `src/matches/infrastructure/persistence/relational/mappers/match.mapper.ts` — cooldownUntil mapping
+- `src/matches/infrastructure/persistence/relational/repositories/match.repository.ts` — findPendingByTargetId impl
+- `src/matches/matches.service.ts` — interruptMatch(), findMatchRequests()
+- `src/matches/matches.controller.ts` — PATCH /interrupt, GET /requests
+- `src/profiles/domain/profile.ts` — New identity/subscription fields
+- `src/profiles/infrastructure/persistence/relational/mappers/profile.mapper.ts` — New field mapping
+- `src/profiles/profiles.service.ts` — Payload fix for new required fields
+- `src/payments/infrastructure/persistence/payment.repository.ts` — Added findPending() abstract
+- `src/payments/infrastructure/persistence/relational/repositories/payment.repository.ts` — findPending() impl
+- `src/payments/payments.service.ts` — LITE subscription assignment, getMyPaymentStatus()
+- `src/payments/payments.controller.ts` — GET /payments/me/status
+- `src/payments/payments.module.ts` — Import ProfilesModule
+- `src/admin/admin.controller.ts` — New file
+- `src/admin/admin.service.ts` — New file
+- `src/admin/admin.module.ts` — New file
+- `src/app.module.ts` — Register AdminModule
+- `src/database/seeds/relational/user/user-seed.service.ts` — Full rewrite with realistic data
+
+---
+
+## [2026-04-17 15:05] - Full-stack onboarding implementation plan
+
+### What changed
+- Created `plans/fullstack-onboarding-plan.md` — comprehensive 6-phase plan covering backend completion + Flutter frontend flow
+- Covers: Auth (OTP via console.log, 30-day re-trigger, phone/email login), Profile (completeness check, identity verification, blurred serialization), Payment (manual receipt + Wave stub, admin validation, LITE subscription credits), Matches (opposite-gender candidates, 3-match limit, chat countdown, interrupt cooldown), Admin (dashboard, seed data with 12 realistic test users + admin), Frontend (Flutter screen flow from splash to dashboard)
+- Identified new Prisma schema additions needed: identity verification fields, subscription credits, match cooldown
+- Planned realistic seed data: 1 admin + 12 test users in various states (validated, pending, incomplete, maxed out, waitlisted)
+
+### Why
+- R1 user story modules exist but business logic is incomplete — need a phased plan to wire everything end-to-end
+- Frontend (Flutter) needs clear API integration mapping before development starts
+- Seed data needed for testing all user states (admin, validated, pending payment, incomplete profile, etc.)
+
+### Files modified
+- `plans/fullstack-onboarding-plan.md` — new, full implementation plan (6 phases, 30+ tasks)
+
+---
+
 ## [2026-04-14 22:31] - Fix project launch bugs for local dev
 
 ### What changed

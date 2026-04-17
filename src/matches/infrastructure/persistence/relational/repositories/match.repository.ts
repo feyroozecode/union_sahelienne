@@ -86,6 +86,18 @@ export class MatchRelationalRepository implements MatchRepository {
     return entities.map((entity) => MatchMapper.toDomain(entity));
   }
 
+  async findPendingByTargetId(targetId: number): Promise<Match[]> {
+    const entities = await this.prisma.match.findMany({
+      where: {
+        targetId: Number(targetId),
+        status: 'pending',
+      },
+      include: MATCH_INCLUDE,
+      orderBy: { createdAt: 'desc' },
+    });
+    return entities.map((entity) => MatchMapper.toDomain(entity));
+  }
+
   async update(id: Match['id'], payload: Partial<Match>): Promise<Match> {
     const existing = await this.prisma.match.findUnique({
       where: { id: Number(id) },

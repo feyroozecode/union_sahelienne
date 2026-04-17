@@ -10,6 +10,7 @@ export abstract class PaymentRepository {
   abstract findById(id: Payment['id']): Promise<NullableType<Payment>>;
   abstract findByWaveRef(waveRef: string): Promise<NullableType<Payment>>;
   abstract findByUserId(userId: number): Promise<Payment[]>;
+  abstract findPending(): Promise<Payment[]>;
   abstract hasValidatedPayment(userId: number): Promise<boolean>;
 
   abstract update(

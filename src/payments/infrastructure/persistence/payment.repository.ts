@@ -13,6 +13,10 @@ export abstract class PaymentRepository {
   abstract findPending(): Promise<Payment[]>;
   abstract hasValidatedPayment(userId: number): Promise<boolean>;
 
+  abstract findAll(): Promise<Payment[]>;
+
+  abstract countByStatus(status: string): Promise<number>;
+
   abstract update(
     id: Payment['id'],
     payload: DeepPartial<Payment>,

@@ -10,6 +10,7 @@ import {
   ApiBearerAuth,
   ApiOkResponse,
   ApiParam,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
@@ -30,6 +31,14 @@ import { QueryUserDto } from '../users/dto/query-user.dto';
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
+  @Get('dashboard')
+  @ApiOkResponse({
+    description: 'Dashboard KPIs and recent registrations chart data',
+  })
+  getDashboard() {
+    return this.adminService.getDashboard();
+  }
+
   @Get('stats')
   @ApiOkResponse({
     description: 'Platform statistics',
@@ -44,6 +53,53 @@ export class AdminController {
   })
   getPendingPayments() {
     return this.adminService.getPendingPayments();
+  }
+
+  @Get('payments')
+  @ApiOkResponse({
+    description: 'List all payments',
+  })
+  getAllPayments() {
+    return this.adminService.getAllPayments();
+  }
+
+  @Get('profiles')
+  @ApiOkResponse({
+    description: 'List profiles with optional filters',
+  })
+  @ApiQuery({ name: 'isIdentityVerified', required: false, type: Boolean })
+  @ApiQuery({ name: 'isComplete', required: false, type: Boolean })
+  @ApiQuery({ name: 'isValidated', required: false, type: Boolean })
+  getProfiles(
+    @Query('isIdentityVerified') isIdentityVerified?: string,
+    @Query('isComplete') isComplete?: string,
+    @Query('isValidated') isValidated?: string,
+  ) {
+    const filters: {
+      isIdentityVerified?: boolean;
+      isComplete?: boolean;
+      isValidated?: boolean;
+    } = {};
+    if (isIdentityVerified !== undefined) {
+      filters.isIdentityVerified = isIdentityVerified === 'true';
+    }
+    if (isComplete !== undefined) {
+      filters.isComplete = isComplete === 'true';
+    }
+    if (isValidated !== undefined) {
+      filters.isValidated = isValidated === 'true';
+    }
+    return this.adminService.getProfiles(filters);
+  }
+
+  @Get('matches')
+  @ApiOkResponse({
+    description: 'List all matches with optional status filter',
+  })
+  @ApiQuery({ name: 'status', required: false, type: String })
+  getMatches(@Query('status') status?: string) {
+    const filters = status ? { status } : undefined;
+    return this.adminService.getMatches(filters);
   }
 
   @Get('users')

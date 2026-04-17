@@ -98,6 +98,23 @@ export class MatchRelationalRepository implements MatchRepository {
     return entities.map((entity) => MatchMapper.toDomain(entity));
   }
 
+  async findAll(filters?: { status?: string }): Promise<Match[]> {
+    const where: Record<string, unknown> = {};
+    if (filters?.status) {
+      where.status = filters.status;
+    }
+    const entities = await this.prisma.match.findMany({
+      where,
+      include: MATCH_INCLUDE,
+      orderBy: { createdAt: 'desc' },
+    });
+    return entities.map((entity) => MatchMapper.toDomain(entity));
+  }
+
+  async countByStatus(status: string): Promise<number> {
+    return this.prisma.match.count({ where: { status } });
+  }
+
   async update(id: Match['id'], payload: Partial<Match>): Promise<Match> {
     const existing = await this.prisma.match.findUnique({
       where: { id: Number(id) },

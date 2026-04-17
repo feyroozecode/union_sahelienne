@@ -40,6 +40,46 @@ export class ProfileRelationalRepository implements ProfileRepository {
     return entity ? ProfileMapper.toDomain(entity) : null;
   }
 
+  async findAll(filters?: {
+    isIdentityVerified?: boolean;
+    isComplete?: boolean;
+    isValidated?: boolean;
+  }): Promise<Profile[]> {
+    const where: Record<string, unknown> = {};
+    if (filters?.isIdentityVerified !== undefined) {
+      where.isIdentityVerified = filters.isIdentityVerified;
+    }
+    if (filters?.isComplete !== undefined) {
+      where.isComplete = filters.isComplete;
+    }
+    if (filters?.isValidated !== undefined) {
+      where.isValidated = filters.isValidated;
+    }
+    const entities = await this.prisma.profile.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+    });
+    return entities.map((entity) => ProfileMapper.toDomain(entity));
+  }
+
+  async count(filters?: {
+    isValidated?: boolean;
+    isIdentityVerified?: boolean;
+    gender?: string;
+  }): Promise<number> {
+    const where: Record<string, unknown> = {};
+    if (filters?.isValidated !== undefined) {
+      where.isValidated = filters.isValidated;
+    }
+    if (filters?.isIdentityVerified !== undefined) {
+      where.isIdentityVerified = filters.isIdentityVerified;
+    }
+    if (filters?.gender !== undefined) {
+      where.gender = filters.gender;
+    }
+    return this.prisma.profile.count({ where });
+  }
+
   async update(id: Profile['id'], payload: Partial<Profile>): Promise<Profile> {
     const existing = await this.prisma.profile.findUnique({
       where: { id: Number(id) },

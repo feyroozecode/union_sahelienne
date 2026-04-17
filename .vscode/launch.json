@@ -1,0 +1,59 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    // ── Backend: attach debugger to running NestJS process ──────────
+    {
+      "name": "🔧 Backend: debug NestJS",
+      "type": "node",
+      "request": "attach",
+      "port": 9229,
+      "restart": true,
+      "sourceMaps": true,
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
+      "skipFiles": ["<node_internals>/**"],
+      "presentation": {
+        "group": "backend",
+        "order": 1
+      }
+    },
+    // ── Backend: launch with debugger (no migrate/seed) ─────────────
+    {
+      "name": "🔧 Backend: launch (dev, no migrate)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "start:dev"],
+      "cwd": "${workspaceFolder}",
+      "sourceMaps": true,
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
+      "skipFiles": ["<node_internals>/**"],
+      "envFile": "${workspaceFolder}/.env",
+      "presentation": {
+        "group": "backend",
+        "order": 2
+      }
+    }
+  ],
+  "compounds": [
+    // ── Run on open: migrate + seed + backend ───────────────────────
+    {
+      "name": "🚀 Backend: migrate + seed + start",
+      "configurations": [],
+      "preLaunchTask": "backend: migrate + seed + start",
+      "presentation": {
+        "group": "fullstack",
+        "order": 1
+      }
+    },
+    // ── Full stack ──────────────────────────────────────────────────
+    {
+      "name": "🌍 Full Stack: backend + frontend",
+      "configurations": [],
+      "preLaunchTask": "🚀 Full Stack: migrate + seed + backend + frontend",
+      "presentation": {
+        "group": "fullstack",
+        "order": 2
+      }
+    }
+  ]
+}

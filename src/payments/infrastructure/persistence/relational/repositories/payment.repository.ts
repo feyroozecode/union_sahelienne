@@ -68,6 +68,17 @@ export class PaymentRelationalRepository implements PaymentRepository {
     return Boolean(payment);
   }
 
+  async findAll(): Promise<Payment[]> {
+    const entities = await this.prisma.payment.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+    return entities.map((entity) => PaymentMapper.toDomain(entity));
+  }
+
+  async countByStatus(status: string): Promise<number> {
+    return this.prisma.payment.count({ where: { status } });
+  }
+
   async update(id: Payment['id'], payload: Partial<Payment>): Promise<Payment> {
     const existing = await this.prisma.payment.findUnique({
       where: { id: Number(id) },

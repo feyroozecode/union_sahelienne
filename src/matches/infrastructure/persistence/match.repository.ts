@@ -16,6 +16,10 @@ export abstract class MatchRepository {
   abstract findByUserId(userId: number): Promise<Match[]>;
   abstract findPendingByTargetId(targetId: number): Promise<Match[]>;
 
+  abstract findAll(filters?: { status?: string }): Promise<Match[]>;
+
+  abstract countByStatus(status: string): Promise<number>;
+
   abstract update(
     id: Match['id'],
     payload: DeepPartial<Match>,

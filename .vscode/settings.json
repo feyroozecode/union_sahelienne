@@ -1,5 +1,9 @@
 {
   "markdown.extension.toc.levels": "2..6",
   "markdown.extension.orderedList.autoRenumber": false,
-  "typescript.preferences.importModuleSpecifier": "relative"
+  "typescript.preferences.importModuleSpecifier": "relative",
+
+  // Auto-run backend (migrate + seed + start) when this folder is opened
+  "task.allowAutomaticTasks": "on",
+  "tasks.runOnFolderOpen": "backend: migrate + seed + start"
 }

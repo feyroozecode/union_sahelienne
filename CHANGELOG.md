@@ -4,6 +4,67 @@
 
 ---
 
+## [2026-04-17 16:38] - Web admin frontend (Next.js) + backend admin endpoints
+
+### What changed
+- `admin/` — New Next.js 15 admin panel (42 files) at http://localhost:3001
+  - Deep Sahel green (#1B5E20) + gold (#D4A017) branding
+  - Login page, auth guard (JWT localStorage), axios with refresh interceptor
+  - Sidebar with 6 nav items: Dashboard, Users, Payments, Profiles, Matches, Settings
+  - Dashboard: 8 KPI cards + 30-day registrations AreaChart + gender ratio bars
+  - Users page: paginated table, role filter, detail panel, deactivate/delete actions
+  - Payments page: tabs (pending / all), receipt image display, validate/reject with confirmation
+  - Profiles page: identity doc image display, verify-identity action
+  - Matches page: status filter, read-only detail panel
+  - Settings page: admin password change
+- `src/admin/admin.controller.ts` — Added `GET /admin/dashboard`, `GET /admin/payments`, `GET /admin/profiles`, `GET /admin/matches`
+- `src/admin/admin.service.ts` — Dashboard KPIs via parallel Prisma queries, all-resources queries
+- `src/admin/admin.module.ts` — Added MatchesModule + PrismaModule imports
+- `src/profiles/infrastructure/persistence/profile.repository.ts` — Added `findAll()` + `count()` to abstract port
+- `src/profiles/infrastructure/persistence/relational/repositories/profile.repository.ts` — Implemented `findAll()` + `count()`
+- `src/payments/infrastructure/persistence/payment.repository.ts` — Added `findAll()` + `countByStatus()` to abstract port
+- `src/payments/infrastructure/persistence/relational/repositories/payment.repository.ts` — Implemented both
+- `src/matches/infrastructure/persistence/match.repository.ts` — Added `findAll()` + `countByStatus()` to abstract port
+- `src/matches/infrastructure/persistence/relational/repositories/match.repository.ts` — Implemented both
+- `scripts/start-frontend.sh` — Rewritten: starts admin (Next.js) + Flutter with flags (`--admin-only`, `--flutter-only`)
+- `scripts/start-all.sh` — Now runs 4 steps: DB setup → Backend → Admin panel → Flutter
+
+### Why
+- Admins need a web interface to validate payments, verify identity documents, and monitor platform stats
+- Admin panel modeled after MyTaxi admin (same architecture, adapted branding/domain)
+
+### Files modified
+- `admin/` — New (42 files)
+- `src/admin/admin.controller.ts`, `admin.service.ts`, `admin.module.ts` — Extended
+- Repository ports + implementations for profiles, payments, matches
+- `scripts/start-frontend.sh`, `scripts/start-all.sh` — Updated
+
+---
+
+## [2026-04-17 16:10] - Launch scripts and VS Code workspace configuration
+
+### What changed
+- `scripts/start-backend.sh` — Prisma generate → migrate deploy → seed → `npm run start:swc`
+- `scripts/start-frontend.sh` — Launches Flutter app from `FLUTTER_APP_PATH`; prints clear instructions if path not set
+- `scripts/start-all.sh` — Runs DB setup (blocking), then backend in background + frontend in foreground; Ctrl-C kills both
+- `.vscode/tasks.json` — Tasks: `prisma: generate`, `prisma: migrate deploy`, `prisma: seed`, `backend: dev server`, `backend: migrate + seed + start`, `frontend: flutter run`, `🚀 Full Stack`
+- `.vscode/launch.json` — Compounds: `🚀 Backend: migrate + seed + start` and `🌍 Full Stack: backend + frontend`; debug attach config
+- `.vscode/settings.json` — `task.allowAutomaticTasks: on` so backend task runs on VS Code folder open
+
+### Why
+- Single-command project startup for both backend-only and full-stack workflows
+- VS Code auto-launch on folder open eliminates manual startup
+
+### Files modified
+- `scripts/start-backend.sh` — New
+- `scripts/start-frontend.sh` — New
+- `scripts/start-all.sh` — New
+- `.vscode/tasks.json` — New
+- `.vscode/launch.json` — New
+- `.vscode/settings.json` — Added task auto-run
+
+---
+
 ## [2026-04-17 15:50] - Full-stack onboarding implementation: missing features + admin + seed data
 
 ### What changed

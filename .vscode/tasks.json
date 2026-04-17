@@ -1,0 +1,87 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    // ── Prisma ──────────────────────────────────────────────────────
+    {
+      "label": "prisma: generate",
+      "type": "shell",
+      "command": "npm run prisma:generate",
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "group": "db", "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "prisma: migrate deploy",
+      "type": "shell",
+      "command": "npm run prisma:migrate:deploy",
+      "options": { "cwd": "${workspaceFolder}" },
+      "dependsOn": ["prisma: generate"],
+      "dependsOrder": "sequence",
+      "presentation": { "group": "db", "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "prisma: seed",
+      "type": "shell",
+      "command": "npm run seed:run:relational",
+      "options": { "cwd": "${workspaceFolder}" },
+      "dependsOn": ["prisma: migrate deploy"],
+      "dependsOrder": "sequence",
+      "presentation": { "group": "db", "reveal": "always", "panel": "shared" }
+    },
+    // ── Backend ─────────────────────────────────────────────────────
+    {
+      "label": "backend: dev server",
+      "type": "shell",
+      "command": "npm run start:swc",
+      "options": { "cwd": "${workspaceFolder}" },
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^([^\\s].*)\\((\\d+),(\\d+)\\):\\s+(error|warning|info)\\s+TS(\\d+)\\s*:\\s*(.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "code": 5,
+          "message": 6
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Starting compilation",
+          "endsPattern": "Nest application successfully started"
+        }
+      },
+      "presentation": { "group": "backend", "reveal": "always", "panel": "dedicated" }
+    },
+    {
+      "label": "backend: migrate + seed + start",
+      "dependsOn": ["prisma: seed", "backend: dev server"],
+      "dependsOrder": "sequence",
+      "presentation": { "group": "backend", "reveal": "always", "panel": "dedicated" }
+    },
+    // ── Frontend ────────────────────────────────────────────────────
+    {
+      "label": "frontend: flutter run",
+      "type": "shell",
+      "command": "flutter run --dart-define=API_BASE_URL=${env:API_BASE_URL}",
+      "options": {
+        "cwd": "${env:FLUTTER_APP_PATH}",
+        "env": {
+          "API_BASE_URL": "http://localhost:3000/api/v1"
+        }
+      },
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": { "group": "frontend", "reveal": "always", "panel": "dedicated" }
+    },
+    // ── Full stack ──────────────────────────────────────────────────
+    {
+      "label": "🚀 Full Stack: migrate + seed + backend + frontend",
+      "dependsOn": [
+        "backend: migrate + seed + start",
+        "frontend: flutter run"
+      ],
+      "dependsOrder": "sequence",
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    }
+  ]
+}

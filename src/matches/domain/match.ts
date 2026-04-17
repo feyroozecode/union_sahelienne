@@ -33,6 +33,9 @@ export class Match {
   @ApiPropertyOptional()
   chatExpiresAt?: Date | null;
 
+  @ApiPropertyOptional()
+  cooldownUntil?: Date | null;
+
   @ApiPropertyOptional({
     type: () => User,
   })

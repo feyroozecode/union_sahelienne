@@ -95,4 +95,25 @@ export class MatchesController {
   findMyMatches(@Request() request) {
     return this.matchesService.findMyMatches(request.user.id);
   }
+
+  @Get('requests')
+  @ApiOkResponse({
+    type: [Match],
+  })
+  findMatchRequests(@Request() request) {
+    return this.matchesService.findMatchRequests(request.user.id);
+  }
+
+  @Patch(':id/interrupt')
+  @ApiParam({
+    name: 'id',
+    type: String,
+    required: true,
+  })
+  @ApiOkResponse({
+    type: Match,
+  })
+  interruptMatch(@Param('id') id: string, @Request() request) {
+    return this.matchesService.interruptMatch(Number(id), request.user.id);
+  }
 }

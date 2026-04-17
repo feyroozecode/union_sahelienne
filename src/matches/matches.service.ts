@@ -13,8 +13,10 @@ import { User } from '../users/domain/user';
 const MATCH_STATUS_PENDING = 'pending';
 const MATCH_STATUS_ACCEPTED = 'accepted';
 const MATCH_STATUS_REJECTED = 'rejected';
+const MATCH_STATUS_INTERRUPTED = 'interrupted';
 const MAX_ACTIVE_MATCHES = 3;
 const CHAT_WINDOW_DAYS = 30;
+const INTERRUPT_COOLDOWN_DAYS = 14;
 
 @Injectable()
 export class MatchesService {
@@ -147,6 +149,44 @@ export class MatchesService {
       .then((matches) =>
         matches.filter((match) => match.status === MATCH_STATUS_ACCEPTED),
       );
+  }
+
+  findMatchRequests(userId: number): Promise<Match[]> {
+    return this.matchRepository.findPendingByTargetId(userId);
+  }
+
+  async interruptMatch(matchId: number, currentUserId: number): Promise<Match> {
+    const match = await this.getMatchOrThrow(matchId);
+
+    if (
+      match.requesterId !== currentUserId &&
+      match.targetId !== currentUserId
+    ) {
+      throw new ForbiddenException({
+        status: 403,
+        error: 'notParticipantOfMatch',
+      });
+    }
+
+    if (match.status !== MATCH_STATUS_ACCEPTED) {
+      throw new UnprocessableEntityException({
+        status: 422,
+        errors: {
+          matchId: 'canOnlyInterruptActiveMatch',
+        },
+      });
+    }
+
+    const cooldownUntil = new Date(
+      Date.now() + INTERRUPT_COOLDOWN_DAYS * 24 * 60 * 60 * 1000,
+    );
+
+    return this.matchRepository.update(match.id, {
+      status: MATCH_STATUS_INTERRUPTED,
+      chatOpenedAt: null,
+      chatExpiresAt: null,
+      cooldownUntil,
+    }) as Promise<Match>;
   }
 
   private async getMatchOrThrow(matchId: number): Promise<Match> {

@@ -31,6 +31,7 @@ export class MatchMapper {
     domainEntity.status = raw.status;
     domainEntity.chatOpenedAt = raw.chatOpenedAt;
     domainEntity.chatExpiresAt = raw.chatExpiresAt;
+    domainEntity.cooldownUntil = raw.cooldownUntil;
     domainEntity.requester = UserMapper.toDomain(raw.requester);
     domainEntity.target = UserMapper.toDomain(raw.target);
     domainEntity.createdAt = raw.createdAt;
@@ -56,6 +57,9 @@ export class MatchMapper {
         : {}),
       ...(domainEntity.chatExpiresAt !== undefined
         ? { chatExpiresAt: domainEntity.chatExpiresAt }
+        : {}),
+      ...(domainEntity.cooldownUntil !== undefined
+        ? { cooldownUntil: domainEntity.cooldownUntil }
         : {}),
       ...(domainEntity.createdAt ? { createdAt: domainEntity.createdAt } : {}),
       ...(domainEntity.updatedAt ? { updatedAt: domainEntity.updatedAt } : {}),

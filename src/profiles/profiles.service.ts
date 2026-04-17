@@ -69,6 +69,12 @@ export class ProfilesService {
       termsAcceptedAt: merged.termsAcceptedAt ?? null,
       isComplete: isProfileComplete(merged),
       isValidated: existingProfile?.isValidated ?? false,
+      isIdentityVerified: existingProfile?.isIdentityVerified ?? false,
+      identityDocType: existingProfile?.identityDocType ?? null,
+      identityDocPath: existingProfile?.identityDocPath ?? null,
+      subscriptionType: existingProfile?.subscriptionType ?? null,
+      matchCreditsTotal: existingProfile?.matchCreditsTotal ?? 0,
+      matchCreditsUsed: existingProfile?.matchCreditsUsed ?? 0,
     };
 
     const profile = existingProfile

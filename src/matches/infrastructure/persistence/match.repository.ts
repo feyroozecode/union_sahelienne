@@ -14,6 +14,7 @@ export abstract class MatchRepository {
   ): Promise<NullableType<Match>>;
   abstract countActiveByUserId(userId: number): Promise<number>;
   abstract findByUserId(userId: number): Promise<Match[]>;
+  abstract findPendingByTargetId(targetId: number): Promise<Match[]>;
 
   abstract update(
     id: Match['id'],

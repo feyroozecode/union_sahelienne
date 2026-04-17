@@ -101,6 +101,13 @@ export class PaymentsController {
   }
 
   @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
+  @Get('me/status')
+  getMyPaymentStatus(@Request() request) {
+    return this.paymentsService.getMyPaymentStatus(request.user.id);
+  }
+
+  @ApiBearerAuth()
   @Roles(RoleEnum.admin)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Patch(':id/validate')

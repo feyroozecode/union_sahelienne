@@ -11,6 +11,11 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
+
+# rules
+.claude/
+CLAUDE.md
+
 # OS
 .DS_Store
 
@@ -40,9 +45,3 @@ lerna-debug.log*
 /ormconfig.json
 .codegpt
 .omx/
-
-# Admin panel (managed separately)
-admin/
-
-
-.claude/

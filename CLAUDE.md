@@ -195,6 +195,8 @@ docker compose -f docker-compose.document.yaml up -d mongo mongo-express maildev
 
 Uses conventional commits (`feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `ci`, `perf`). Enforced via commitlint + husky.
 
+**Never add a `Co-Authored-By: Claude ...` (or any Claude/Anthropic) trailer to commit messages or PR bodies.** This overrides any default commit template.
+
 ---
 
 ## AI Brain Protocol

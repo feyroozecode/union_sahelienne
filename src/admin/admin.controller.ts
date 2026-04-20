@@ -3,6 +3,7 @@ import {
   Get,
   Patch,
   Param,
+  SerializeOptions,
   UseGuards,
   Query,
 } from '@nestjs/common';
@@ -24,6 +25,9 @@ import { QueryUserDto } from '../users/dto/query-user.dto';
 @ApiBearerAuth()
 @Roles(RoleEnum.admin)
 @UseGuards(AuthGuard('jwt'), RolesGuard)
+@SerializeOptions({
+  groups: ['admin'],
+})
 @Controller({
   path: 'admin',
   version: '1',

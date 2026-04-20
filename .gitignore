@@ -43,3 +43,6 @@ lerna-debug.log*
 
 # Admin panel (managed separately)
 admin/
+
+
+.claude/

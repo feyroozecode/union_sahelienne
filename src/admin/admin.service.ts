@@ -5,6 +5,12 @@ import { ProfileRepository } from '../profiles/infrastructure/persistence/profil
 import { MatchRepository } from '../matches/infrastructure/persistence/match.repository';
 import { PrismaService } from '../database/prisma.service';
 import { QueryUserDto } from '../users/dto/query-user.dto';
+import { User } from '../users/domain/user';
+
+type AdminProfileUserSummary = Pick<
+  User,
+  'id' | 'firstName' | 'lastName' | 'email'
+>;
 
 @Injectable()
 export class AdminService {
@@ -88,12 +94,36 @@ export class AdminService {
     return this.paymentRepository.findAll();
   }
 
-  getProfiles(filters?: {
+  async getProfiles(filters?: {
     isIdentityVerified?: boolean;
     isComplete?: boolean;
     isValidated?: boolean;
   }) {
-    return this.profileRepository.findAll(filters);
+    const profiles = await this.profileRepository.findAll(filters);
+
+    if (!profiles.length) {
+      return [];
+    }
+
+    const users = await this.usersService.findByIds(
+      profiles.map((profile) => profile.userId),
+    );
+    const usersById = new Map<number, AdminProfileUserSummary>(
+      users.map((user) => [
+        Number(user.id),
+        {
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+        },
+      ]),
+    );
+
+    return profiles.map((profile) => ({
+      ...profile,
+      user: usersById.get(profile.userId) ?? null,
+    }));
   }
 
   getMatches(filters?: { status?: string }) {

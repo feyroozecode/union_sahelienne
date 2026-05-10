@@ -9,12 +9,12 @@ import { IPaginationOptions } from '../utils/types/pagination-options';
 import { Match } from './domain/match';
 import { UsersService } from '../users/users.service';
 import { User } from '../users/domain/user';
+import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 
 const MATCH_STATUS_PENDING = 'pending';
 const MATCH_STATUS_ACCEPTED = 'accepted';
 const MATCH_STATUS_REJECTED = 'rejected';
 const MATCH_STATUS_INTERRUPTED = 'interrupted';
-const MAX_ACTIVE_MATCHES = 3;
 const CHAT_WINDOW_DAYS = 30;
 const INTERRUPT_COOLDOWN_DAYS = 14;
 
@@ -23,6 +23,7 @@ export class MatchesService {
   constructor(
     private readonly matchRepository: MatchRepository,
     private readonly usersService: UsersService,
+    private readonly subscriptionsService: SubscriptionsService,
   ) {}
 
   async findCandidates(
@@ -45,9 +46,7 @@ export class MatchesService {
     if (requesterId === targetId) {
       throw new UnprocessableEntityException({
         status: 422,
-        errors: {
-          targetId: 'cannotMatchSelf',
-        },
+        errors: { targetId: 'cannotMatchSelf' },
       });
     }
 
@@ -57,19 +56,18 @@ export class MatchesService {
     if (requester.profile?.gender === target.profile?.gender) {
       throw new UnprocessableEntityException({
         status: 422,
-        errors: {
-          targetId: 'candidateMustBeOppositeGender',
-        },
+        errors: { targetId: 'candidateMustBeOppositeGender' },
       });
     }
 
-    const activeMatches =
-      await this.matchRepository.countActiveByUserId(requesterId);
+    // Check subscription credits instead of hardcoded max
+    const availableCredits =
+      await this.subscriptionsService.getAvailableCredits(requesterId);
 
-    if (activeMatches >= MAX_ACTIVE_MATCHES) {
+    if (availableCredits <= 0) {
       throw new ForbiddenException({
         status: 403,
-        error: 'activeMatchLimitReached',
+        error: 'noCreditsAvailable',
       });
     }
 
@@ -81,13 +79,11 @@ export class MatchesService {
     if (existingMatch) {
       throw new UnprocessableEntityException({
         status: 422,
-        errors: {
-          targetId: 'matchAlreadyExists',
-        },
+        errors: { targetId: 'matchAlreadyExists' },
       });
     }
 
-    return this.matchRepository.create({
+    const match = await this.matchRepository.create({
       requesterId,
       targetId,
       pairKey: [requesterId, targetId]
@@ -97,6 +93,11 @@ export class MatchesService {
       chatOpenedAt: null,
       chatExpiresAt: null,
     });
+
+    // Deduct one credit from requester's subscription
+    await this.subscriptionsService.deductCredit(requesterId);
+
+    return match;
   }
 
   async acceptMatch(matchId: number, currentUserId: number): Promise<Match> {
@@ -109,21 +110,32 @@ export class MatchesService {
       });
     }
 
-    await Promise.all([
-      this.ensureAvailableMatchSlots(match.requesterId),
-      this.ensureAvailableMatchSlots(match.targetId),
-    ]);
+    // Target also needs an available credit slot
+    const targetCredits =
+      await this.subscriptionsService.getAvailableCredits(match.targetId);
+
+    if (targetCredits <= 0) {
+      throw new ForbiddenException({
+        status: 403,
+        error: 'noCreditsAvailableForTarget',
+      });
+    }
 
     const now = new Date();
     const chatExpiresAt = new Date(
       now.getTime() + CHAT_WINDOW_DAYS * 24 * 60 * 60 * 1000,
     );
 
-    return this.matchRepository.update(match.id, {
+    const accepted = (await this.matchRepository.update(match.id, {
       status: MATCH_STATUS_ACCEPTED,
       chatOpenedAt: now,
       chatExpiresAt,
-    }) as Promise<Match>;
+    })) as Match;
+
+    // Deduct one credit from target's subscription
+    await this.subscriptionsService.deductCredit(match.targetId);
+
+    return accepted;
   }
 
   async rejectMatch(matchId: number, currentUserId: number): Promise<Match> {
@@ -171,9 +183,7 @@ export class MatchesService {
     if (match.status !== MATCH_STATUS_ACCEPTED) {
       throw new UnprocessableEntityException({
         status: 422,
-        errors: {
-          matchId: 'canOnlyInterruptActiveMatch',
-        },
+        errors: { matchId: 'canOnlyInterruptActiveMatch' },
       });
     }
 
@@ -193,35 +203,17 @@ export class MatchesService {
     const match = await this.matchRepository.findById(matchId);
 
     if (!match) {
-      throw new NotFoundException({
-        status: 404,
-        error: 'matchNotFound',
-      });
+      throw new NotFoundException({ status: 404, error: 'matchNotFound' });
     }
 
     return match;
-  }
-
-  private async ensureAvailableMatchSlots(userId: number): Promise<void> {
-    const activeMatches =
-      await this.matchRepository.countActiveByUserId(userId);
-
-    if (activeMatches >= MAX_ACTIVE_MATCHES) {
-      throw new ForbiddenException({
-        status: 403,
-        error: 'activeMatchLimitReached',
-      });
-    }
   }
 
   private async getValidatedUserWithProfile(userId: number): Promise<User> {
     const user = await this.usersService.findById(userId);
 
     if (!user || !user.profile) {
-      throw new NotFoundException({
-        status: 404,
-        error: 'profileNotFound',
-      });
+      throw new NotFoundException({ status: 404, error: 'profileNotFound' });
     }
 
     if (!user.profile.isValidated) {

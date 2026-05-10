@@ -5,6 +5,7 @@ import {
   Patch,
   Param,
   Get,
+  Query,
   Request,
   UploadedFile,
   UseGuards,
@@ -18,6 +19,7 @@ import {
   ApiConsumes,
   ApiOkResponse,
   ApiParam,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import { Payment } from './domain/payment';
@@ -111,16 +113,20 @@ export class PaymentsController {
   @Roles(RoleEnum.admin)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Patch(':id/validate')
-  @ApiParam({
-    name: 'id',
+  @ApiParam({ name: 'id', type: String, required: true })
+  @ApiQuery({
+    name: 'tier',
+    required: false,
     type: String,
-    required: true,
+    description: 'lite | essentiel | trimestriel | annuel (auto-detected from amount if omitted)',
   })
-  @ApiOkResponse({
-    type: Payment,
-  })
-  validatePayment(@Param('id') id: string, @Request() request) {
-    return this.paymentsService.validatePayment(Number(id), request.user.id);
+  @ApiOkResponse({ type: Payment })
+  validatePayment(
+    @Param('id') id: string,
+    @Request() request,
+    @Query('tier') tier?: string,
+  ) {
+    return this.paymentsService.validatePayment(Number(id), request.user.id, tier);
   }
 
   @ApiBearerAuth()

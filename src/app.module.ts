@@ -29,6 +29,9 @@ import { ProfilesModule } from './profiles/profiles.module';
 import { PaymentsModule } from './payments/payments.module';
 import { MatchesModule } from './matches/matches.module';
 import { AdminModule } from './admin/admin.module';
+import { SubscriptionsModule } from './subscriptions/subscriptions.module';
+import { MessagesModule } from './messages/messages.module';
+import { ReportsModule } from './reports/reports.module';
 
 // <database-block>
 const infrastructureDatabaseModule = (databaseConfig() as DatabaseConfig)
@@ -79,20 +82,23 @@ const infrastructureDatabaseModule = (databaseConfig() as DatabaseConfig)
       imports: [ConfigModule],
       inject: [ConfigService],
     }),
-    UsersModule,
-    FilesModule,
     AuthModule,
+    UsersModule,
     AuthFacebookModule,
     AuthGoogleModule,
     AuthAppleModule,
     SessionModule,
     MailModule,
+    FilesModule,
     MailerModule,
     HomeModule,
     ProfilesModule,
     PaymentsModule,
     MatchesModule,
     AdminModule,
+    SubscriptionsModule,
+    MessagesModule,
+    ReportsModule,
   ],
 })
 export class AppModule {}

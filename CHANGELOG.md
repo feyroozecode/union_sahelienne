@@ -4,6 +4,57 @@
 
 ---
 
+## [2026-05-10 15:05] - R3-S1: Subscription tiers, Chat messaging, Reports
+
+### What changed
+- `prisma/schema.prisma` — Added `Subscription`, `Message`, `Report` models; back-relations on `User`
+- `prisma/migrations/20260510140535_r3_subscriptions_messages_reports/` — New migration applied
+- `src/subscriptions/` — Full hexagonal module: domain, port, relational adapter, service, controller
+  - 4 tiers defined in `subscriptions.constants.ts`: LITE (5K/2cr), ESSENTIEL (10K/3cr), TRIMESTRIEL (25K/10cr), ANNUEL (75K/49cr)
+  - `GET /api/v1/subscriptions/me` — active subscription
+  - `GET /api/v1/subscriptions/me/history` — subscription history
+  - `GET /api/v1/subscriptions/me/credits` — available credits
+- `src/messages/` — Full hexagonal module: domain, port, relational adapter, service, controller
+  - `POST /api/v1/matches/:matchId/messages` — send text or image message (validated match required, chat window enforced)
+  - `GET /api/v1/matches/:matchId/messages` — paginated message history
+  - `X-Sensitive-Data: true` header on all chat endpoints
+- `src/reports/` — Full hexagonal module: domain, port, relational adapter, service, controller
+  - `POST /api/v1/reports/:targetId` — file a report (suspect/harassment/scam/other)
+  - `GET /api/v1/reports/me` — user's filed reports
+- `src/payments/payments.service.ts` — Refactored `validatePayment()`: creates `Subscription` record per tier, auto-detects tier from payment amount, syncs `Profile.matchCreditsTotal`
+- `src/payments/payments.controller.ts` — Added optional `?tier=` query param on `PATCH /payments/:id/validate`
+- `src/payments/payments.module.ts` — Added `SubscriptionsModule` import
+- `src/matches/matches.service.ts` — Replaced hardcoded `MAX_ACTIVE_MATCHES = 3` with dynamic `SubscriptionsService.getAvailableCredits()` + `deductCredit()` on sendInterest and acceptMatch
+- `src/matches/matches.module.ts` — Added `SubscriptionsModule` import
+- `src/admin/admin.service.ts` — Added `getReports()`, `reviewReport()`, `dismissReport()`, `getSubscriptions()`
+- `src/admin/admin.controller.ts` — Added `GET /admin/reports`, `PATCH /admin/reports/:id/review`, `PATCH /admin/reports/:id/dismiss`, `GET /admin/subscriptions`
+- `src/admin/admin.module.ts` — Added `ReportsModule` + `RelationalSubscriptionPersistenceModule` imports
+- `src/app.module.ts` — Registered `SubscriptionsModule`, `MessagesModule`, `ReportsModule`
+
+### Why
+- Subscription tiers (LITE/ESSENTIEL/TRIMESTRIEL/ANNUEL) with proper credit + expiry tracking were the revenue-blocking feature from epic_10_05_26.txt
+- Chat messaging (text + images) completes the core matchmaking loop — matched users had no way to communicate
+- `X-Sensitive-Data: true` header enables Flutter to block screen capture on chat screens
+- Reports module enables user safety moderation workflow in admin panel
+- Dynamic credit deduction from Subscription replaces the hardcoded 3-match limit
+
+### Files modified
+- `prisma/schema.prisma` — Added Subscription, Message, Report models + User back-relations
+- `src/subscriptions/` — New module (11 files)
+- `src/messages/` — New module (9 files)
+- `src/reports/` — New module (9 files)
+- `src/payments/payments.service.ts` — Subscription tier assignment on validatePayment
+- `src/payments/payments.controller.ts` — Added tier query param
+- `src/payments/payments.module.ts` — SubscriptionsModule import
+- `src/matches/matches.service.ts` — Dynamic credit checking via SubscriptionsService
+- `src/matches/matches.module.ts` — SubscriptionsModule import
+- `src/admin/admin.service.ts` — Reports + subscriptions admin methods
+- `src/admin/admin.controller.ts` — Reports + subscriptions admin endpoints
+- `src/admin/admin.module.ts` — ReportsModule + RelationalSubscriptionPersistenceModule
+- `src/app.module.ts` — 3 new module registrations
+
+---
+
 ## [2026-04-17 16:38] - Web admin frontend (Next.js) + backend admin endpoints
 
 ### What changed

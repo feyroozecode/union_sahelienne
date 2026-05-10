@@ -60,15 +60,10 @@
     },
     // ── Frontend ────────────────────────────────────────────────────
     {
-      "label": "frontend: flutter run",
+      "label": "frontend: dev server",
       "type": "shell",
-      "command": "flutter run --dart-define=API_BASE_URL=${env:API_BASE_URL}",
-      "options": {
-        "cwd": "${env:FLUTTER_APP_PATH}",
-        "env": {
-          "API_BASE_URL": "http://localhost:3000/api/v1"
-        }
-      },
+      "command": "cd admin && npm run dev",
+      "options": { "cwd": "${workspaceFolder}" },
       "isBackground": true,
       "problemMatcher": [],
       "presentation": { "group": "frontend", "reveal": "always", "panel": "dedicated" }
@@ -78,9 +73,9 @@
       "label": "🚀 Full Stack: migrate + seed + backend + frontend",
       "dependsOn": [
         "backend: migrate + seed + start",
-        "frontend: flutter run"
+        "frontend: dev server"
       ],
-      "dependsOrder": "sequence",
+      "dependsOrder": "parallel",
       "presentation": { "reveal": "always", "panel": "dedicated" }
     }
   ]

@@ -78,3 +78,47 @@
   background: rgba(163, 51, 39, 0.1);
   border-color: rgba(163, 51, 39, 0.6);
 }
+
+/* Mobile Responsive Styles */
+@media (max-width: 767px) {
+  .sidebar {
+    width: 100%;
+    min-height: auto;
+    border-right: none;
+    position: static;
+    top: auto;
+  }
+
+  .brand {
+    display: none;
+  }
+
+  .nav {
+    gap: 0;
+    padding: 0;
+  }
+
+  .navItem {
+    padding: 16px;
+    border-radius: 0;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .navItemActive {
+    border-right: none;
+    border-left: 3px solid var(--accent-primary);
+    padding-left: calc(var(--space-4) - 3px);
+  }
+
+  .footer {
+    padding: var(--space-4);
+    border-top: 1px solid var(--border-color);
+  }
+
+  .logoutBtn {
+    min-height: 44px;
+    padding: 12px 16px;
+  }
+}
+

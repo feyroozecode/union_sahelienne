@@ -119,3 +119,59 @@
   background: rgba(163, 51, 39, 0.1);
   border-radius: var(--radius-sm);
 }
+
+/* Mobile Responsive Styles */
+@media (max-width: 480px) {
+  .loginContainer {
+    padding: var(--space-2);
+  }
+
+  .loginCard {
+    padding: var(--space-6) var(--space-4);
+    border-radius: var(--radius-lg);
+    max-width: 100%;
+  }
+
+  .brand h1 {
+    font-size: 1.5rem;
+  }
+
+  .brand p {
+    font-size: 0.8rem;
+  }
+
+  .label {
+    font-size: 0.8rem;
+  }
+
+  .input {
+    padding: var(--space-3);
+    min-height: 44px;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+
+  .submitBtn {
+    padding: var(--space-3);
+    min-height: 44px;
+    font-size: 0.9rem;
+  }
+
+  .formGroup {
+    margin-bottom: var(--space-3);
+  }
+}
+
+@media (max-width: 768px) {
+  .loginCard {
+    max-width: 100%;
+  }
+
+  .brand h1 {
+    font-size: 1.75rem;
+  }
+
+  .input {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+}
+

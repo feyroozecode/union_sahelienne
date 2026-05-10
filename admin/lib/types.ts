@@ -16,6 +16,7 @@ export interface AdminUser extends AdminUserSummary {
   phone?: string | null;
   provider: string;
   role?: AdminRole | null;
+  status?:  string | null;
   createdAt: string;
   updatedAt?: string;
 }
@@ -50,6 +51,29 @@ export interface AdminDashboardResponse {
   recentRegistrations: Array<{
     date: string;
     count: number;
+  }>;
+  recentUsers: Array<{
+    id: number | string;
+    name: string;
+    email: string;
+  }>;
+  recentMatches: Array<{
+    id: number;
+    status: string;
+    createdAt: string;
+  }>;
+  recentProfiles: Array<{
+    id: number;
+    gender: string;
+    country: string | null;
+    userId: number;
+  }>;
+  recentPayments: Array<{
+    id: number;
+    amount: number | null;
+    type: string;
+    status: string;
+    createdAt: string;
   }>;
 }
 

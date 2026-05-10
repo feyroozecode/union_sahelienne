@@ -16,7 +16,7 @@ interface FormData {
   role: string;
 }
 
-export default function UsersPage() {
+export default function AdminsPage() {
   const isMobile = useIsMobile();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,6 +31,12 @@ export default function UsersPage() {
     role: '',
   });
   const [submitting, setSubmitting] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{
+    type: 'toggle' | 'modify' | 'detail';
+    userId: AdminId;
+    currentStatus?: string;
+  } | null>(null);
 
   useEffect(() => {
     let isActive = true;
@@ -93,55 +99,91 @@ export default function UsersPage() {
 
   // New action handlers
   const handleToggleStatus = async (userId: AdminId, currentStatus: string) => {
-    try {
-      const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
-      await fetchApi(`/admin/users/${userId}/status`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status: newStatus }),
-      });
-      setUsers((prev) =>
-        prev.map((user) =>
-          user.id === userId
-            ?  { ...user, status: newStatus }
-            : user
-        )
-      );
-      setOpenDropdown(null);
-    } catch (err) {
-      console.error('Failed to update status:', err);
-      setError(getErrorMessage(err, 'Échec de la mise à jour du statut.'));
-    }
+    setConfirmAction({ type: 'toggle', userId, currentStatus });
+    setShowConfirmModal(true);
   };
 
   const handleModify = (userId: AdminId) => {
-    // Navigate to edit page or open edit modal
-    console.log('Modify admin:', userId);
-    setOpenDropdown(null);
-    // You can implement navigation here
-    // router.push(`/dashboard/admins/${userId}/edit`);
+    setConfirmAction({ type: 'modify', userId });
+    setShowConfirmModal(true);
   };
 
   const handleDetail = (userId: AdminId) => {
-    // Navigate to detail page
-    console.log('View detail:', userId);
-    setOpenDropdown(null);
-    // You can implement navigation here
-    // router.push(`/dashboard/admins/${userId}`);
+    setConfirmAction({ type: 'detail', userId });
+    setShowConfirmModal(true);
+  };
+
+  const executeAction = async () => {
+    if (!confirmAction) return;
+
+    try {
+      if (confirmAction.type === 'toggle') {
+        const newStatus = confirmAction.currentStatus === 'active' ? 'inactive' : 'active';
+        await fetchApi(`/admin/users/${confirmAction.userId}/status`, {
+          method: 'PATCH',
+          body: JSON.stringify({ status: newStatus }),
+        });
+        setUsers((prev) =>
+          prev.map((user) =>
+            user.id === confirmAction.userId
+              ? { ...user, status: newStatus }
+              : user
+          )
+        );
+      } else if (confirmAction.type === 'modify') {
+        console.log('Modify admin:', confirmAction.userId);
+        // router.push(`/dashboard/admins/${confirmAction.userId}/edit`);
+      } else if (confirmAction.type === 'detail') {
+        console.log('View detail:', confirmAction.userId);
+        // router.push(`/dashboard/admins/${confirmAction.userId}`);
+      }
+      setOpenDropdown(null);
+      setShowConfirmModal(false);
+      setConfirmAction(null);
+    } catch (err) {
+      console.error('Failed to execute action:', err);
+      setError(getErrorMessage(err, 'Échec de l\'exécution de l\'action.'));
+      setShowConfirmModal(false);
+      setConfirmAction(null);
+    }
+  };
+
+  const closeConfirmModal = () => {
+    setShowConfirmModal(false);
+    setConfirmAction(null);
+  };
+
+  const getConfirmationMessage = () => {
+    if (!confirmAction) return '';
+    const user = users.find((u) => u.id === confirmAction.userId);
+    const userName = user ? formatUserLabel(user, `Utilisateur #${user.id}`) : `Utilisateur #${confirmAction.userId}`;
+
+    switch (confirmAction.type) {
+      case 'toggle':
+        const action = confirmAction.currentStatus === 'active' ? 'désactiver' : 'activer';
+        return `Êtes-vous sûr de vouloir ${action} ${userName} ?`;
+      case 'modify':
+        return `Êtes-vous sûr de vouloir modifier ${userName} ?`;
+      case 'detail':
+        return `Êtes-vous sûr de vouloir voir les détails de ${userName} ?`;
+      default:
+        return 'Êtes-vous sûr de cette action ?';
+    }
   };
 
   return (
     <>
       <header className={`${pageStyles.header} animate-fade-in-up stagger-1`}>
         <div>
-          <h1>Gestion des utilisateurs</h1>
-          <p>La page de gestion des comptes Clients </p>
+          <h1>Gestion Administrateurs</h1>
+          <p>La page de gestion des comptes administrateurs </p>
         </div>
       </header>
 
       <div className={`${tableStyles.tableContainer} animate-fade-in-up stagger-2`}>
         <div className={tableStyles.tableHeader}>
           <div className={tableStyles.tableTitle}>Tous les Comptes Enregistrés</div>
-          {/* <button
+          <button
             onClick={() => setShowModal(true)}
             style={{
               padding: isMobile ? '8px 12px' : '8px 16px',
@@ -162,7 +204,7 @@ export default function UsersPage() {
             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--accent-primary)')}
           >
             {isMobile ? 'Ajouter' : 'Ajouter Admin'}
-          </button> */}
+          </button>
         </div>
         <div style={{ overflowX: isMobile ? 'hidden' : 'auto' }}>
           {isMobile ? (
@@ -488,6 +530,89 @@ export default function UsersPage() {
         </div>
       </div>
 
+      {/* Confirmation Modal */}
+      {showConfirmModal && confirmAction && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(17, 17, 17, 0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1001,
+            animation: 'fadeIn 0.3s ease-out',
+            padding: '16px',
+          }}
+          onClick={closeConfirmModal}
+        >
+          <div
+            style={{
+              backgroundColor: 'var(--bg-secondary)',
+              padding: isMobile ? '24px' : '32px',
+              borderRadius: 'var(--radius-lg)',
+              maxWidth: '400px',
+              width: isMobile ? '100%' : '90%',
+              boxShadow: 'var(--shadow-lg)',
+              border: `1px solid var(--border-color)`,
+              animation: 'slideUp 0.3s ease-out',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 style={{ color: 'var(--text-primary)', marginBottom: '16px', fontSize: isMobile ? '1.1rem' : '1.3rem' }}>
+              Confirmation
+            </h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontSize: isMobile ? '13px' : '14px', lineHeight: '1.5' }}>
+              {getConfirmationMessage()}
+            </p>
+
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={closeConfirmModal}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: 'var(--bg-tertiary)',
+                  border: `1px solid var(--border-color)`,
+                  borderRadius: 'var(--radius-sm)',
+                  cursor: 'pointer',
+                  fontSize: isMobile ? '12px' : '13px',
+                  color: 'var(--text-primary)',
+                  fontWeight: '500',
+                  minHeight: '40px',
+                  transition: 'background-color 0.2s',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-secondary)')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)')}
+              >
+                Annuler
+              </button>
+              <button
+                onClick={executeAction}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: 'var(--accent-primary)',
+                  border: 'none',
+                  borderRadius: 'var(--radius-sm)',
+                  cursor: 'pointer',
+                  fontSize: isMobile ? '12px' : '13px',
+                  color: 'var(--text-primary)',
+                  fontWeight: '500',
+                  minHeight: '40px',
+                  transition: 'background-color 0.2s',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-terracotta-light)')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--accent-primary)')}
+              >
+                Confirmer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal Form for Adding Admin */}
       {showModal && (
         <div
@@ -499,11 +624,11 @@ export default function UsersPage() {
             bottom: 0,
             backgroundColor: 'rgba(17, 17, 17, 0.7)',
             display: 'flex',
-            alignItems: isMobile ? 'flex-end' : 'center',
+            alignItems: 'self-start',
             justifyContent: 'center',
             zIndex: 1000,
             animation: 'fadeIn 0.3s ease-out',
-            padding: isMobile ? '0' : '16px',
+            padding: '16px',
           }}
           onClick={() => resetModal()}
         >
@@ -511,14 +636,14 @@ export default function UsersPage() {
             style={{
               backgroundColor: 'var(--bg-secondary)',
               padding: isMobile ? '24px' : '32px',
-              borderRadius: isMobile ? 'var(--radius-lg) var(--radius-lg) 0 0' : 'var(--radius-lg)',
+              borderRadius: 'var(--radius-lg)',
               maxWidth: '500px',
               width: isMobile ? '100%' : '90%',
               boxShadow: 'var(--shadow-lg)',
-              border: isMobile ? 'none' : `1px solid var(--border-color)`,
-              animation: isMobile ? 'slideUp 0.3s ease-out' : 'slideUp 0.3s ease-out',
-              maxHeight: isMobile ? '90vh' : 'auto',
-              overflowY: isMobile ? 'auto' : 'visible',
+              border: `1px solid var(--border-color)`,
+              animation: 'slideUp 0.3s ease-out',
+              maxHeight: '90vh',
+              overflowY: 'auto',
             }}
             onClick={(e) => e.stopPropagation()}
           >

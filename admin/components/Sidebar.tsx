@@ -51,7 +51,7 @@ export default function Sidebar() {
           }}
         >
           <div style={{ fontSize: '18px', fontWeight: '600', color: 'var(--text-primary)' }}>
-            U<span style={{ color: 'var(--accent-primary)' }}>S</span> Admin
+            U-<span style={{ color: 'var(--accent-primary)' }}>S</span> Admin
           </div>
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}

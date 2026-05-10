@@ -18,9 +18,9 @@
 
 .kpiGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: var(--space-6);
-  margin-bottom: var(--space-12);
+  margin-bottom: var(--space-8);
 }
 
 .kpiCard {
@@ -79,12 +79,25 @@
   line-height: 1;
 }
 
+.kpiTrend {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: var(--space-2);
+  font-weight: 500;
+}
+
 .chartContainer {
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   padding: var(--space-6);
   height: 400px;
+  transition: all 0.3s ease;
+}
+
+.chartContainer:hover {
+  border-color: rgba(205, 92, 8, 0.2);
+  box-shadow: var(--shadow-sm);
 }
 
 .chartHeader {
@@ -118,3 +131,322 @@
 /* Specific KPI Accents */
 .accentOchre .kpiValue { color: var(--accent-secondary); }
 .accentTerracotta .kpiValue { color: var(--accent-primary); }
+.accentGolden .kpiValue { color: #d4a574; }
+.accentAlert .kpiValue { color: #e8644a; }
+
+/* Quick Access Section */
+.quickAccessSection {
+  margin-bottom: var(--space-12);
+}
+
+.sectionTitle {
+  font-size: 1.5rem;
+  color: var(--text-primary);
+  margin-bottom: var(--space-6);
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.quickAccessCardsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: var(--space-6);
+}
+
+.quickAccessMainCard {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.quickAccessMainCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: currentColor;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.quickAccessMainCard:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-lg);
+  border-color: rgba(205, 92, 8, 0.3);
+}
+
+.quickAccessMainCard:hover::before {
+  opacity: 1;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.cardIcon {
+  color: var(--text-primary);
+  flex-shrink: 0;
+  margin-top: 2px;
+  transition: all 0.3s ease;
+}
+
+.quickAccessMainCard:hover .cardIcon {
+  transform: scale(1.1);
+}
+
+.cardTitle {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  text-transform: capitalize;
+}
+
+.cardDescription {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin: var(--space-1) 0 0 0;
+  font-weight: 500;
+}
+
+.recentList {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  min-height: 100px;
+}
+
+.recentItem {
+  padding: var(--space-3) var(--space-3);
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  transition: all 0.2s ease;
+}
+
+.recentItem:hover {
+  background: rgba(205, 92, 8, 0.05);
+}
+
+.recentItemName {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recentItemMeta {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.statusDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-pending {
+  background: #ffa500;
+}
+
+.status-accepted {
+  background: #4caf50;
+}
+
+.status-validated {
+  background: #4caf50;
+}
+
+.status-rejected {
+  background: #e8644a;
+}
+
+.emptyState {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-align: center;
+  padding: var(--space-4);
+  font-style: italic;
+}
+
+.viewAllBtn {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.viewAllBtn:hover {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: white;
+  transform: translateX(2px);
+}
+
+/* Color accents for each card */
+.cardUsers:hover::before {
+  background: #4a90e2;
+}
+
+.cardMatches:hover::before {
+  background: #7b68ee;
+}
+
+.cardProfiles:hover::before {
+  background: #50c878;
+}
+
+.cardPayments:hover::before {
+  background: #ffa500;
+}
+
+.cardAdmins:hover::before {
+  background: #9b59b6;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .quickAccessCardsGrid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+}
+
+/* Chart Subtitle */
+.chartSubtitle {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-top: var(--space-2);
+  font-weight: 500;
+}
+
+/* Health/System Status Section */
+.healthSection {
+  margin-top: var(--space-12);
+}
+
+.healthGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-5);
+}
+
+.healthCard {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  transition: all 0.3s ease;
+}
+
+.healthCard:hover {
+  border-color: rgba(76, 175, 80, 0.3);
+  box-shadow: var(--shadow-sm);
+}
+
+.healthIndicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: pulse-indicator 2s infinite ease-in-out;
+}
+
+.healthGood .healthIndicator {
+  background: #4caf50;
+  box-shadow: 0 0 8px rgba(76, 175, 80, 0.6);
+}
+
+@keyframes pulse-indicator {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.healthInfo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.healthLabel {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.healthStatus {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.healthIconComponent {
+  color: #4caf50;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.healthCard:hover .healthIconComponent {
+  transform: scale(1.1);
+}
+
+/* Stagger animations */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stagger-1 { animation: fade-in-up 0.5s ease-out 0.1s both; }
+.stagger-2 { animation: fade-in-up 0.5s ease-out 0.2s both; }
+.stagger-3 { animation: fade-in-up 0.5s ease-out 0.3s both; }
+.stagger-4 { animation: fade-in-up 0.5s ease-out 0.4s both; }
+.stagger-5 { animation: fade-in-up 0.5s ease-out 0.5s both; }

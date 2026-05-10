@@ -6,9 +6,14 @@ import {
   SerializeOptions,
   UseGuards,
   Query,
+  Post,
+  HttpCode,
+  HttpStatus,
+  Body,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
+  ApiCreatedResponse,
   ApiOkResponse,
   ApiParam,
   ApiQuery,
@@ -20,6 +25,8 @@ import { RoleEnum } from '../roles/roles.enum';
 import { RolesGuard } from '../roles/roles.guard';
 import { AdminService } from './admin.service';
 import { QueryUserDto } from '../users/dto/query-user.dto';
+import { User } from '../users/domain/user';
+import { CreateAdminDto } from './dto/create-admin.dto';
 
 @ApiTags('Admin')
 @ApiBearerAuth()
@@ -122,4 +129,14 @@ export class AdminController {
   verifyIdentity(@Param('id') id: string) {
     return this.adminService.verifyIdentity(Number(id));
   }
+
+@Post('users')
+@ApiCreatedResponse({
+  description: 'Create a new admin user',
+  type: User,
+})
+@HttpCode(HttpStatus.CREATED)
+createAdmin(@Body() createAdminDto: CreateAdminDto): Promise<User> {
+  return this.adminService.createAdmin(createAdminDto);
+}
 }

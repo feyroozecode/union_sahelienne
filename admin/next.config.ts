@@ -10,4 +10,8 @@ const nextConfig: NextConfig = {
   },
 };
 
+module.exports = {
+  allowedDevOrigins: ['192.168.1.184'],
+}
+
 export default nextConfig;

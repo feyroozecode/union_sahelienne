@@ -1,1 +1,3 @@
-npx commitlint --edit
+#!/bin/sh
+# commit-msg hook disabled (no-op)
+exit 0

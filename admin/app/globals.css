@@ -124,7 +124,7 @@ a:hover {
   flex-direction: column;
   gap: var(--space-8);
   max-width: 1600px;
-  margin: 0 auto;
+  /* margin: 0 auto; */
 }
 
 /* Animations */
@@ -164,3 +164,71 @@ a:hover {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted); 
 }
+
+/* Mobile Responsive Styles */
+@media (max-width: 767px) {
+  :root {
+    --space-8: 16px;
+    --space-6: 12px;
+    --space-4: 8px;
+  }
+
+  .layout-container {
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .main-content {
+    padding: var(--space-4);
+    gap: var(--space-4);
+    max-width: 100%;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  h2 {
+    font-size: 1.25rem;
+  }
+
+  h3 {
+    font-size: 1.1rem;
+  }
+
+  /* Touch-friendly interactions */
+  button, a, input, select, textarea {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Responsive text sizing */
+  body {
+    font-size: 14px;
+  }
+
+  /* Table responsive */
+  table {
+    font-size: 13px;
+  }
+
+  /* Modal adjustments for mobile */
+  .modal {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 0 !important;
+  }
+}
+
+/* Tablet Responsive Styles */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .main-content {
+    padding: var(--space-6);
+    gap: var(--space-6);
+  }
+
+  .layout-container {
+    flex-direction: row;
+  }
+}
+

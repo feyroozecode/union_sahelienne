@@ -6,6 +6,8 @@ import { PaymentsModule } from '../payments/payments.module';
 import { ProfilesModule } from '../profiles/profiles.module';
 import { MatchesModule } from '../matches/matches.module';
 import { PrismaModule } from '../database/prisma.module';
+import { ReportsModule } from '../reports/reports.module';
+import { RelationalSubscriptionPersistenceModule } from '../subscriptions/infrastructure/persistence/relational/relational-persistence.module';
 
 @Module({
   imports: [
@@ -14,6 +16,8 @@ import { PrismaModule } from '../database/prisma.module';
     ProfilesModule,
     MatchesModule,
     PrismaModule,
+    ReportsModule,
+    RelationalSubscriptionPersistenceModule,
   ],
   controllers: [AdminController],
   providers: [AdminService],

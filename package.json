@@ -6,6 +6,8 @@
   "private": true,
   "license": "MIT",
   "scripts": {
+    "backend": "npm run start:dev",
+    "frontend": "cd admin && npm run dev",
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",

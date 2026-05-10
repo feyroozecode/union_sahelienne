@@ -6,6 +6,8 @@ import { MatchRepository } from '../matches/infrastructure/persistence/match.rep
 import { PrismaService } from '../database/prisma.service';
 import { QueryUserDto } from '../users/dto/query-user.dto';
 import { User } from '../users/domain/user';
+import { ReportsService } from '../reports/reports.service';
+import { SubscriptionRepository } from '../subscriptions/infrastructure/persistence/subscription.repository';
 
 type AdminProfileUserSummary = Pick<
   User,
@@ -20,6 +22,8 @@ export class AdminService {
     private readonly profileRepository: ProfileRepository,
     private readonly matchRepository: MatchRepository,
     private readonly prisma: PrismaService,
+    private readonly reportsService: ReportsService,
+    private readonly subscriptionRepository: SubscriptionRepository,
   ) {}
 
   async getDashboard() {
@@ -144,14 +148,25 @@ export class AdminService {
     const profile = await this.profileRepository.findById(profileId);
 
     if (!profile) {
-      throw new NotFoundException({
-        status: 404,
-        error: 'profileNotFound',
-      });
+      throw new NotFoundException({ status: 404, error: 'profileNotFound' });
     }
 
-    return this.profileRepository.update(profileId, {
-      isIdentityVerified: true,
-    });
+    return this.profileRepository.update(profileId, { isIdentityVerified: true });
+  }
+
+  getReports(filters?: { status?: string }) {
+    return this.reportsService.findAll(filters);
+  }
+
+  reviewReport(id: number, adminUserId: number) {
+    return this.reportsService.reviewReport(id, adminUserId);
+  }
+
+  dismissReport(id: number, adminUserId: number) {
+    return this.reportsService.dismissReport(id, adminUserId);
+  }
+
+  getSubscriptions(filters?: { tier?: string; status?: string }) {
+    return this.subscriptionRepository.findAll(filters);
   }
 }

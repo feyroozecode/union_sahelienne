@@ -61,8 +61,12 @@ model User {
   sessions         Session[]
   profile          Profile?
   payments         Payment[]
-  requestedMatches Match[] @relation("MatchRequester")
-  targetedMatches  Match[] @relation("MatchTarget")
+  requestedMatches Match[]        @relation("MatchRequester")
+  targetedMatches  Match[]        @relation("MatchTarget")
+  subscriptions    Subscription[]
+  sentMessages     Message[]      @relation("SentMessages")
+  filedReports     Report[]       @relation("FiledReports")
+  receivedReports  Report[]       @relation("ReceivedReports")
 
   @@index([socialId])
   @@index([firstName])
@@ -153,7 +157,62 @@ model Match {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  messages Message[]
+
   @@index([requesterId])
   @@index([targetId])
   @@map("match")
+}
+
+model Subscription {
+  id               Int       @id @default(autoincrement())
+  userId           Int
+  user             User      @relation(fields: [userId], references: [id])
+  tier             String
+  creditsGranted   Int
+  creditsBonus     Int       @default(0)
+  creditsUsed      Int       @default(0)
+  status           String    @default("active")
+  expiresAt        DateTime?
+  bonusExpiresAt   DateTime?
+  paymentId        Int?      @unique
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("subscription")
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  matchId   Int
+  match     Match    @relation(fields: [matchId], references: [id])
+  senderId  Int
+  sender    User     @relation("SentMessages", fields: [senderId], references: [id])
+  content   String?  @db.Text
+  imageUrl  String?
+  sentAt    DateTime @default(now())
+
+  @@index([matchId])
+  @@index([senderId])
+  @@map("message")
+}
+
+model Report {
+  id          Int       @id @default(autoincrement())
+  reporterId  Int
+  reporter    User      @relation("FiledReports", fields: [reporterId], references: [id])
+  targetId    Int
+  target      User      @relation("ReceivedReports", fields: [targetId], references: [id])
+  type        String
+  description String?   @db.Text
+  status      String    @default("pending")
+  reviewedBy  Int?
+  reviewedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([reporterId])
+  @@index([targetId])
+  @@map("report")
 }

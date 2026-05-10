@@ -5,6 +5,7 @@ import { RelationalPaymentPersistenceModule } from './infrastructure/persistence
 import { FilesLocalModule } from '../files/infrastructure/uploader/local/files.module';
 import { AccountValidationModule } from '../account-validation/account-validation.module';
 import { ProfilesModule } from '../profiles/profiles.module';
+import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { ProfilesModule } from '../profiles/profiles.module';
     AccountValidationModule,
     RelationalPaymentPersistenceModule,
     ProfilesModule,
+    SubscriptionsModule,
   ],
   controllers: [PaymentsController],
   providers: [PaymentsService],

@@ -9,18 +9,76 @@ const hash = async (password: string) => {
   return bcrypt.hash(password, salt);
 };
 
+// Subscription tier definitions matching subscriptions.constants.ts
+const TIERS = {
+  lite: {
+    creditsGranted: 1,
+    creditsBonus: 1,
+    validityDays: 30,
+    bonusValidityDays: 7,
+    amountFcfa: 5000,
+  },
+  essentiel: {
+    creditsGranted: 3,
+    creditsBonus: 0,
+    validityDays: 30,
+    bonusValidityDays: 0,
+    amountFcfa: 10000,
+  },
+  trimestriel: {
+    creditsGranted: 10,
+    creditsBonus: 0,
+    validityDays: 90,
+    bonusValidityDays: 0,
+    amountFcfa: 25000,
+  },
+  annuel: {
+    creditsGranted: 49,
+    creditsBonus: 0,
+    validityDays: 365,
+    bonusValidityDays: 0,
+    amountFcfa: 75000,
+  },
+} as const;
+
+type Tier = keyof typeof TIERS;
+
+interface TestUser {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  gender: string;
+  age?: number;
+  profession?: string | null;
+  maritalStatus?: string | null;
+  country?: string | null;
+  city?: string | null;
+  ethnicity?: string | null;
+  validated?: boolean;
+  paymentValidated?: boolean;
+  paymentPending?: boolean;
+  paymentRejected?: boolean;
+  incomplete?: boolean;
+  statusInactive?: boolean;
+  tier?: Tier;
+  creditsUsed?: number;
+  // R3: subscription data
+  subscriptionTier?: Tier;
+}
+
 @Injectable()
 export class UserSeedService {
   constructor(private readonly prisma: PrismaService) {}
 
   async run() {
-    // ── Admin ────────────────────────────────────────────────────────────
+    // ── Admin ────────────────────────────────────────────────────────────────
     const adminEmail = 'admin@union-sahelienne.com';
     const adminExists = await this.prisma.user.findFirst({
       where: { email: adminEmail, deletedAt: null },
     });
 
-    let adminId: number | undefined;
+    let adminId: number;
     if (!adminExists) {
       const admin = await this.prisma.user.create({
         data: {
@@ -40,12 +98,22 @@ export class UserSeedService {
       console.log(`[seed] Admin already exists: ${adminEmail}`);
     }
 
-    // ── Test users ───────────────────────────────────────────────────────
-    const testUsers = [
+    // ── Test users ───────────────────────────────────────────────────────────
+    //
+    // State legend:
+    //  validated + paymentValidated → profile complete, subscription active
+    //  paymentPending               → payment submitted, awaiting admin validation
+    //  paymentRejected              → payment rejected, not validated
+    //  incomplete                   → profile not complete (some fields missing)
+    //  statusInactive               → user account inactive
+    //
+    const testUsers: TestUser[] = [
+      // ── Validated users (complete profile + active subscription) ──────────
       {
         firstName: 'Amadou',
         lastName: 'Diallo',
         email: 'amadou@test.com',
+        phone: '+221770000001',
         gender: 'male',
         age: 32,
         profession: 'Ingénieur',
@@ -55,11 +123,13 @@ export class UserSeedService {
         ethnicity: 'Wolof',
         validated: true,
         paymentValidated: true,
+        subscriptionTier: 'lite',
       },
       {
         firstName: 'Fatoumata',
         lastName: 'Traoré',
         email: 'fatoumata@test.com',
+        phone: '+223700000002',
         gender: 'female',
         age: 27,
         profession: 'Infirmière',
@@ -69,11 +139,13 @@ export class UserSeedService {
         ethnicity: 'Bambara',
         validated: true,
         paymentValidated: true,
+        subscriptionTier: 'lite',
       },
       {
         firstName: 'Ibrahim',
         lastName: 'Keita',
         email: 'ibrahim@test.com',
+        phone: '+224620000003',
         gender: 'male',
         age: 35,
         profession: 'Comptable',
@@ -83,11 +155,79 @@ export class UserSeedService {
         ethnicity: 'Peulh',
         validated: true,
         paymentValidated: true,
+        subscriptionTier: 'essentiel',
+        creditsUsed: 0,
       },
+      {
+        firstName: 'Aïssata',
+        lastName: 'Diarra',
+        email: 'aissata@test.com',
+        phone: '+226700000006',
+        gender: 'female',
+        age: 30,
+        profession: 'Enseignante',
+        maritalStatus: 'Célibataire',
+        country: 'Burkina Faso',
+        city: 'Ouagadougou',
+        ethnicity: 'Mossi',
+        validated: true,
+        paymentValidated: true,
+        subscriptionTier: 'lite',
+      },
+      {
+        firstName: 'Moussa',
+        lastName: 'Sidibé',
+        email: 'moussa@test.com',
+        phone: '+223700000007',
+        gender: 'male',
+        age: 34,
+        profession: 'Médecin',
+        maritalStatus: 'Célibataire',
+        country: 'Mali',
+        city: 'Ségou',
+        ethnicity: 'Bambara',
+        validated: true,
+        paymentValidated: true,
+        subscriptionTier: 'trimestriel',
+      },
+      {
+        firstName: 'Kadiatou',
+        lastName: 'Bah',
+        email: 'kadiatou@test.com',
+        phone: '+224620000008',
+        gender: 'female',
+        age: 26,
+        profession: 'Juriste',
+        maritalStatus: 'Célibataire',
+        country: 'Guinée',
+        city: 'Labé',
+        ethnicity: 'Peulh',
+        validated: true,
+        paymentValidated: true,
+        subscriptionTier: 'lite',
+      },
+      {
+        firstName: 'Boubacar',
+        lastName: 'Cissé',
+        email: 'boubacar@test.com',
+        phone: '+227900000011',
+        gender: 'male',
+        age: 40,
+        profession: 'Entrepreneur',
+        maritalStatus: 'Célibataire',
+        country: 'Niger',
+        city: 'Niamey',
+        ethnicity: 'Haoussa',
+        validated: true,
+        paymentValidated: true,
+        subscriptionTier: 'annuel',
+      },
+      // ── Payment pending (complete profile, awaiting admin validation) ──────
       {
         firstName: 'Mariam',
         lastName: 'Coulibaly',
         email: 'mariam@test.com',
+        phone: '+22500000004',
         gender: 'female',
         age: 24,
         profession: 'Étudiante',
@@ -99,67 +239,12 @@ export class UserSeedService {
         paymentValidated: false,
         paymentPending: true,
       },
-      {
-        firstName: 'Ousmane',
-        lastName: 'Sanogo',
-        email: 'ousmane@test.com',
-        gender: 'male',
-        age: 29,
-        profession: 'Commerçant',
-        maritalStatus: null,
-        country: null,
-        city: null,
-        ethnicity: null,
-        validated: false,
-        paymentValidated: false,
-        incomplete: true,
-      },
-      {
-        firstName: 'Aïssata',
-        lastName: 'Diarra',
-        email: 'aissata@test.com',
-        gender: 'female',
-        age: 30,
-        profession: 'Enseignante',
-        maritalStatus: 'Célibataire',
-        country: 'Burkina Faso',
-        city: 'Ouagadougou',
-        ethnicity: 'Mossi',
-        validated: true,
-        paymentValidated: true,
-      },
-      {
-        firstName: 'Moussa',
-        lastName: 'Sidibé',
-        email: 'moussa@test.com',
-        gender: 'male',
-        age: 34,
-        profession: 'Médecin',
-        maritalStatus: 'Célibataire',
-        country: 'Mali',
-        city: 'Ségou',
-        ethnicity: 'Bambara',
-        validated: true,
-        paymentValidated: true,
-      },
-      {
-        firstName: 'Kadiatou',
-        lastName: 'Bah',
-        email: 'kadiatou@test.com',
-        gender: 'female',
-        age: 26,
-        profession: 'Juriste',
-        maritalStatus: 'Célibataire',
-        country: 'Guinée',
-        city: 'Labé',
-        ethnicity: 'Peulh',
-        validated: true,
-        paymentValidated: true,
-      },
+      // ── Payment rejected (complete profile, payment rejected) ─────────────
       {
         firstName: 'Sékou',
         lastName: 'Camara',
         email: 'sekou@test.com',
+        phone: '+221770000009',
         gender: 'male',
         age: 38,
         profession: 'Architecte',
@@ -171,6 +256,24 @@ export class UserSeedService {
         paymentValidated: false,
         paymentRejected: true,
       },
+      // ── Incomplete profile (missing required fields) ───────────────────────
+      {
+        firstName: 'Ousmane',
+        lastName: 'Sanogo',
+        email: 'ousmane@test.com',
+        phone: '+221770000005',
+        gender: 'male',
+        age: 29,
+        profession: 'Commerçant',
+        maritalStatus: null,
+        country: null,
+        city: null,
+        ethnicity: null,
+        validated: false,
+        paymentValidated: false,
+        incomplete: true,
+      },
+      // ── No profile yet (inactive account) ────────────────────────────────
       {
         firstName: 'Djénéba',
         lastName: 'Koné',
@@ -186,24 +289,12 @@ export class UserSeedService {
         paymentValidated: false,
         statusInactive: true,
       },
-      {
-        firstName: 'Boubacar',
-        lastName: 'Cissé',
-        email: 'boubacar@test.com',
-        gender: 'male',
-        age: 40,
-        profession: 'Entrepreneur',
-        maritalStatus: 'Célibataire',
-        country: 'Niger',
-        city: 'Niamey',
-        ethnicity: 'Haoussa',
-        validated: true,
-        paymentValidated: true,
-      },
+      // ── No subscription yet (complete profile, no payment) ────────────────
       {
         firstName: 'Aminata',
         lastName: 'Sylla',
         email: 'aminata@test.com',
+        phone: '+224620000012',
         gender: 'female',
         age: 25,
         profession: 'Pharmacienne',
@@ -216,10 +307,12 @@ export class UserSeedService {
       },
     ];
 
+    // Track created/existing users for match seeding (index = position in testUsers array)
     const createdUsers: Array<{
       id: number;
       email: string;
       validated: boolean;
+      paymentId?: number;
     }> = [];
 
     for (const u of testUsers) {
@@ -232,23 +325,26 @@ export class UserSeedService {
         const profile = await this.prisma.profile.findUnique({
           where: { userId: exists.id },
         });
+        const payment = await this.prisma.payment.findFirst({
+          where: { userId: exists.id, status: 'validated' },
+        });
         createdUsers.push({
           id: exists.id,
           email: u.email,
           validated: profile?.isValidated ?? false,
+          paymentId: payment?.id,
         });
         continue;
       }
 
-      const statusId = u.statusInactive
-        ? StatusEnum.inactive
-        : StatusEnum.active;
+      const statusId = u.statusInactive ? StatusEnum.inactive : StatusEnum.active;
 
       const user = await this.prisma.user.create({
         data: {
           firstName: u.firstName,
           lastName: u.lastName,
           email: u.email,
+          phone: u.phone ?? null,
           password: await hash('Test@2026!'),
           provider: 'email',
           roleId: RoleEnum.user,
@@ -256,16 +352,16 @@ export class UserSeedService {
         },
       });
 
-      // Create profile (complete if not flagged incomplete)
+      let paymentId: number | undefined;
+
       if (!u.incomplete && !u.statusInactive) {
-        const isComplete = !!(
-          u.gender &&
-          u.maritalStatus &&
-          u.country &&
-          u.city
-        );
-        const isValidated = u.validated && isComplete;
+        const isComplete = !!(u.gender && u.maritalStatus && u.country && u.city);
+        const isValidated = !!(u.validated && isComplete);
         const termsAcceptedAt = isComplete ? new Date() : null;
+
+        const tier = u.subscriptionTier ?? 'lite';
+        const tierConfig = TIERS[tier];
+        const totalCredits = tierConfig.creditsGranted + tierConfig.creditsBonus;
 
         await this.prisma.profile.create({
           data: {
@@ -282,33 +378,62 @@ export class UserSeedService {
             isValidated,
             ...(isValidated
               ? {
-                  subscriptionType: 'lite',
-                  matchCreditsTotal: 3,
-                  matchCreditsUsed: 0,
+                  subscriptionType: tier,
+                  matchCreditsTotal: totalCredits,
+                  matchCreditsUsed: u.creditsUsed ?? 0,
                 }
               : {}),
           },
         });
 
-        // Create payment
+        // ── Payment record ─────────────────────────────────────────────────
         if (u.paymentValidated) {
-          await this.prisma.payment.create({
+          const payment = await this.prisma.payment.create({
             data: {
               userId: user.id,
               type: 'manual',
               status: 'validated',
               validatedAt: new Date(),
               validatedBy: adminId,
-              amount: 5000,
+              amount: tierConfig.amountFcfa,
             },
           });
+          paymentId = payment.id;
+
+          // ── Subscription record (R3) ───────────────────────────────────
+          const now = new Date();
+          const expiresAt = new Date(
+            now.getTime() + tierConfig.validityDays * 24 * 60 * 60 * 1000,
+          );
+          const bonusExpiresAt =
+            tierConfig.bonusValidityDays > 0
+              ? new Date(now.getTime() + tierConfig.bonusValidityDays * 24 * 60 * 60 * 1000)
+              : null;
+
+          await this.prisma.subscription.create({
+            data: {
+              userId: user.id,
+              tier,
+              creditsGranted: tierConfig.creditsGranted,
+              creditsBonus: tierConfig.creditsBonus,
+              creditsUsed: u.creditsUsed ?? 0,
+              status: 'active',
+              expiresAt,
+              bonusExpiresAt,
+              paymentId: payment.id,
+            },
+          });
+
+          console.log(
+            `[seed] Subscription created: ${u.email} → ${tier} (${totalCredits} credits)`,
+          );
         } else if (u.paymentPending) {
           await this.prisma.payment.create({
             data: {
               userId: user.id,
               type: 'manual',
               status: 'pending',
-              amount: 5000,
+              amount: TIERS.lite.amountFcfa,
             },
           });
         } else if (u.paymentRejected) {
@@ -317,18 +442,14 @@ export class UserSeedService {
               userId: user.id,
               type: 'manual',
               status: 'rejected',
-              amount: 5000,
+              amount: TIERS.lite.amountFcfa,
             },
           });
         }
 
-        createdUsers.push({
-          id: user.id,
-          email: u.email,
-          validated: isValidated,
-        });
+        createdUsers.push({ id: user.id, email: u.email, validated: isValidated, paymentId });
       } else {
-        // Incomplete profile (just gender set)
+        // Incomplete or inactive: minimal profile
         if (!u.statusInactive) {
           await this.prisma.profile.create({
             data: {
@@ -345,15 +466,20 @@ export class UserSeedService {
       console.log(`[seed] User created: ${u.email} / Test@2026!`);
     }
 
-    // ── Matches ──────────────────────────────────────────────────────────
-    // Amadou (#0, male, validated) ↔ Fatoumata (#1, female, validated)
-    // Moussa (#6, male, validated) ↔ Aïssata (#5, female, validated)
-    // Kadiatou (#7, female, validated) ↔ Boubacar (#10, male, validated)
+    // ── Matches ──────────────────────────────────────────────────────────────
+    // Index references into createdUsers (same order as testUsers array):
+    //   0 Amadou (male, validated, lite)
+    //   1 Fatoumata (female, validated, lite)
+    //   2 Ibrahim (male, validated, essentiel)
+    //   3 Aïssata (female, validated, lite)
+    //   4 Moussa (male, validated, trimestriel)
+    //   5 Kadiatou (female, validated, lite)
+    //   6 Boubacar (male, validated, annuel)
 
     const matchPairs: Array<[number, number]> = [
       [0, 1], // Amadou ↔ Fatoumata
-      [6, 5], // Moussa ↔ Aïssata
-      [10, 7], // Boubacar ↔ Kadiatou
+      [4, 3], // Moussa ↔ Aïssata
+      [6, 5], // Boubacar ↔ Kadiatou
     ];
 
     for (const [reqIdx, tgtIdx] of matchPairs) {
@@ -363,7 +489,9 @@ export class UserSeedService {
       if (!requester || !target) continue;
       if (!requester.validated || !target.validated) continue;
 
-      const pairKey = [requester.id, target.id].sort((a, b) => a - b).join(':');
+      const pairKey = [requester.id, target.id]
+        .sort((a, b) => a - b)
+        .join(':');
 
       const existingMatch = await this.prisma.match.findUnique({
         where: { pairKey },
@@ -371,9 +499,8 @@ export class UserSeedService {
 
       if (!existingMatch) {
         const now = new Date();
-        const chatExpiresAt = new Date(
-          now.getTime() + 30 * 24 * 60 * 60 * 1000,
-        );
+        const chatExpiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
         await this.prisma.match.create({
           data: {
             requesterId: requester.id,
@@ -385,18 +512,59 @@ export class UserSeedService {
           },
         });
 
-        // Update matchCreditsUsed for both
+        // Sync creditsUsed on both subscriptions
+        await this.prisma.subscription.updateMany({
+          where: { userId: { in: [requester.id, target.id] }, status: 'active' },
+          data: { creditsUsed: { increment: 1 } },
+        });
+        // Sync profile credits cache
         await this.prisma.profile.updateMany({
           where: { userId: { in: [requester.id, target.id] } },
           data: { matchCreditsUsed: { increment: 1 } },
         });
 
-        console.log(
-          `[seed] Match created: ${requester.email} ↔ ${target.email}`,
-        );
+        console.log(`[seed] Match created: ${requester.email} ↔ ${target.email}`);
       }
     }
 
-    console.log('[seed] Relational seed completed.');
+    // ── Sample messages in first match ───────────────────────────────────────
+    const firstMatch = await this.prisma.match.findFirst({
+      where: { status: 'accepted' },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    if (firstMatch) {
+      const existingMessages = await this.prisma.message.count({
+        where: { matchId: firstMatch.id },
+      });
+
+      if (existingMessages === 0) {
+        const sampleMessages = [
+          { senderId: firstMatch.requesterId, content: 'Assalamu Alaikum, comment allez-vous ?' },
+          { senderId: firstMatch.targetId, content: 'Wa Alaikum Assalam ! Je vais bien, Alhamdulillah. Et vous ?' },
+          { senderId: firstMatch.requesterId, content: 'Très bien merci. Je suis heureux de vous avoir trouvé sur cette plateforme.' },
+          { senderId: firstMatch.targetId, content: 'Moi aussi. Je suis enseignante à Ouagadougou. Et vous, quelle est votre activité ?' },
+          { senderId: firstMatch.requesterId, content: 'Je suis médecin à Ségou. J\'espère qu\'on pourra mieux se connaître.' },
+        ];
+
+        for (const msg of sampleMessages) {
+          await this.prisma.message.create({
+            data: {
+              matchId: firstMatch.id,
+              senderId: msg.senderId,
+              content: msg.content,
+            },
+          });
+        }
+        console.log(`[seed] Sample messages created in match #${firstMatch.id}`);
+      }
+    }
+
+    console.log('\n[seed] ─────────────────────────────────────────────────');
+    console.log('[seed]  Relational seed completed.');
+    console.log('[seed] ─────────────────────────────────────────────────');
+    console.log('[seed]  Admin:   admin@union-sahelienne.com / Admin@2026!');
+    console.log('[seed]  Users:   *@test.com / Test@2026!');
+    console.log('[seed] ─────────────────────────────────────────────────\n');
   }
 }

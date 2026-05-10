@@ -3,6 +3,7 @@ import {
   Get,
   Patch,
   Param,
+  Request,
   SerializeOptions,
   UseGuards,
   Query,
@@ -116,10 +117,45 @@ export class AdminController {
 
   @Patch('profiles/:id/verify-identity')
   @ApiParam({ name: 'id', type: String, required: true })
-  @ApiOkResponse({
-    description: 'Mark identity document as verified',
-  })
+  @ApiOkResponse({ description: 'Mark identity document as verified' })
   verifyIdentity(@Param('id') id: string) {
     return this.adminService.verifyIdentity(Number(id));
+  }
+
+  @Get('reports')
+  @ApiOkResponse({ description: 'List all user reports' })
+  @ApiQuery({ name: 'status', required: false, type: String })
+  getReports(@Query('status') status?: string) {
+    return this.adminService.getReports(status ? { status } : undefined);
+  }
+
+  @Patch('reports/:id/review')
+  @ApiParam({ name: 'id', type: String, required: true })
+  @ApiOkResponse({ description: 'Mark report as reviewed' })
+  reviewReport(@Param('id') id: string, @Request() request) {
+    return this.adminService.reviewReport(Number(id), request.user.id);
+  }
+
+  @Patch('reports/:id/dismiss')
+  @ApiParam({ name: 'id', type: String, required: true })
+  @ApiOkResponse({ description: 'Dismiss report' })
+  dismissReport(@Param('id') id: string, @Request() request) {
+    return this.adminService.dismissReport(Number(id), request.user.id);
+  }
+
+  @Get('subscriptions')
+  @ApiOkResponse({ description: 'List all subscriptions' })
+  @ApiQuery({ name: 'tier', required: false, type: String })
+  @ApiQuery({ name: 'status', required: false, type: String })
+  getSubscriptions(
+    @Query('tier') tier?: string,
+    @Query('status') status?: string,
+  ) {
+    const filters: { tier?: string; status?: string } = {};
+    if (tier) filters.tier = tier;
+    if (status) filters.status = status;
+    return this.adminService.getSubscriptions(
+      Object.keys(filters).length ? filters : undefined,
+    );
   }
 }

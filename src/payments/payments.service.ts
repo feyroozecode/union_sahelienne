@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { PaymentRepository } from './infrastructure/persistence/payment.repository';
 import { Payment } from './domain/payment';
@@ -8,14 +8,17 @@ import { InitiateWavePaymentDto } from './dto/initiate-wave-payment.dto';
 import { WaveCallbackDto } from './dto/wave-callback.dto';
 import { WaveInitiateResponseDto } from './dto/wave-initiate-response.dto';
 import { ProfileRepository } from '../profiles/infrastructure/persistence/profile.repository';
+import { SubscriptionsService } from '../subscriptions/subscriptions.service';
+import {
+  SUBSCRIPTION_TIERS,
+  SubscriptionTier,
+} from '../subscriptions/subscriptions.constants';
 
 const PAYMENT_TYPE_MANUAL = 'manual';
 const PAYMENT_TYPE_WAVE = 'wave';
 const PAYMENT_STATUS_PENDING = 'pending';
 const PAYMENT_STATUS_VALIDATED = 'validated';
 const PAYMENT_STATUS_REJECTED = 'rejected';
-const SUBSCRIPTION_LITE = 'lite';
-const LITE_MATCH_CREDITS = 3;
 
 @Injectable()
 export class PaymentsService {
@@ -24,6 +27,7 @@ export class PaymentsService {
     private readonly filesLocalService: FilesLocalService,
     private readonly accountValidationService: AccountValidationService,
     private readonly profileRepository: ProfileRepository,
+    private readonly subscriptionsService: SubscriptionsService,
   ) {}
 
   async createManualPayment(
@@ -74,10 +78,7 @@ export class PaymentsService {
     const payment = await this.paymentRepository.findByWaveRef(dto.waveRef);
 
     if (!payment) {
-      throw new NotFoundException({
-        status: 404,
-        error: 'paymentNotFound',
-      });
+      throw new NotFoundException({ status: 404, error: 'paymentNotFound' });
     }
 
     return this.paymentRepository.update(payment.id, {
@@ -107,13 +108,20 @@ export class PaymentsService {
   async validatePayment(
     id: Payment['id'],
     adminUserId: number,
+    tier?: string,
   ): Promise<Payment> {
     const payment = await this.paymentRepository.findById(id);
 
     if (!payment) {
-      throw new NotFoundException({
-        status: 404,
-        error: 'paymentNotFound',
+      throw new NotFoundException({ status: 404, error: 'paymentNotFound' });
+    }
+
+    const resolvedTier = (tier ?? this.resolveTierFromAmount(payment.amount)) as SubscriptionTier;
+
+    if (!SUBSCRIPTION_TIERS[resolvedTier]) {
+      throw new BadRequestException({
+        status: 400,
+        errors: { tier: `unknownSubscriptionTier: ${resolvedTier}` },
       });
     }
 
@@ -123,16 +131,24 @@ export class PaymentsService {
       validatedBy: adminUserId,
     })) as Payment;
 
-    await this.accountValidationService.syncProfileValidationState(
+    await this.accountValidationService.syncProfileValidationState(payment.userId);
+
+    // Create subscription record and sync profile credits
+    const subscription = await this.subscriptionsService.createFromPayment(
       payment.userId,
+      resolvedTier,
+      payment.id,
     );
 
-    // Assign LITE subscription credits on first validated payment
+    const tierConfig = SUBSCRIPTION_TIERS[resolvedTier];
+    const totalCredits = tierConfig.creditsGranted + tierConfig.creditsBonus;
+
     const profile = await this.profileRepository.findByUserId(payment.userId);
-    if (profile && !profile.subscriptionType) {
+    if (profile) {
       await this.profileRepository.update(profile.id, {
-        subscriptionType: SUBSCRIPTION_LITE,
-        matchCreditsTotal: LITE_MATCH_CREDITS,
+        subscriptionType: resolvedTier,
+        matchCreditsTotal: totalCredits,
+        matchCreditsUsed: subscription.creditsUsed,
       });
     }
 
@@ -143,10 +159,7 @@ export class PaymentsService {
     const payment = await this.paymentRepository.findById(id);
 
     if (!payment) {
-      throw new NotFoundException({
-        status: 404,
-        error: 'paymentNotFound',
-      });
+      throw new NotFoundException({ status: 404, error: 'paymentNotFound' });
     }
 
     const updated = (await this.paymentRepository.update(id, {
@@ -155,10 +168,20 @@ export class PaymentsService {
       validatedBy: null,
     })) as Payment;
 
-    await this.accountValidationService.syncProfileValidationState(
-      payment.userId,
-    );
+    await this.accountValidationService.syncProfileValidationState(payment.userId);
 
     return updated;
+  }
+
+  /**
+   * Infers tier from payment amount as a fallback when admin doesn't specify.
+   * Admin can override by passing tier explicitly.
+   */
+  private resolveTierFromAmount(amount: number | null | undefined): SubscriptionTier {
+    if (!amount) return 'lite';
+    if (amount >= 75000) return 'annuel';
+    if (amount >= 25000) return 'trimestriel';
+    if (amount >= 10000) return 'essentiel';
+    return 'lite';
   }
 }

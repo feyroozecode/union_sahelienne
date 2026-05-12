@@ -5,15 +5,33 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { removeToken } from '@/lib/api';
 import { useIsMobile } from '@/hooks/useMediaQuery';
+import {
+  LayoutDashboard,
+  Users,
+  UserCircle,
+  Link2,
+  CreditCard,
+  ShieldCheck,
+  LogOut,
+  Menu,
+  Settings,
+  Bell,
+  ChevronRight,
+} from 'lucide-react';
 import styles from './Sidebar.module.css';
 
 const navItems = [
-  { href: '/', label: 'Overview' },
-  { href: '/profiles', label: 'Profiles' },
-  { href: '/matches', label: 'Matches' },
-  { href: '/payments', label: 'Payments' },
-  { href: '/users', label: 'Users' },
-  { href: '/admins', label: 'Admins' },
+  { href: '/', label: 'Overview', icon: LayoutDashboard },
+  { href: '/profiles', label: 'Profiles', icon: UserCircle },
+  { href: '/matches', label: 'Matches', icon: Link2 },
+  { href: '/payments', label: 'Payments', icon: CreditCard },
+  { href: '/users', label: 'Users', icon: Users },
+  { href: '/admins', label: 'Admins', icon: ShieldCheck },
+  { href: '/config', label: 'App Config', icon: Settings },
+];
+
+const bottomNavItems = [
+  { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
 export default function Sidebar() {
@@ -35,129 +53,104 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Mobile Header with Hamburger */}
       {isMobile && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '12px 16px',
-            backgroundColor: 'var(--bg-secondary)',
-            borderBottom: '1px solid var(--border-color)',
-            position: 'sticky',
-            top: 0,
-            zIndex: 40,
-          }}
-        >
-          <div style={{ fontSize: '18px', fontWeight: '600', color: 'var(--text-primary)' }}>
-            U<span style={{ color: 'var(--accent-primary)' }}>S</span> Admin
+        <div className={styles.mobileHeader}>
+          <div className={styles.mobileBrand}>
+            <span>U<span className={styles.brandAccent}>S</span></span> Admin
           </div>
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '24px',
-              cursor: 'pointer',
-              color: 'var(--text-primary)',
-              padding: '8px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              minWidth: '44px',
-              minHeight: '44px',
-            }}
+            className={styles.hamburger}
             aria-label="Toggle menu"
           >
-            ☰
+            <Menu size={24} />
           </button>
         </div>
       )}
 
-      {/* Mobile Menu Overlay */}
       {isMobile && isMobileMenuOpen && (
         <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            zIndex: 39,
-          }}
+          className={styles.overlay}
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
 
-      {/* Sidebar */}
       <aside
-        className={styles.sidebar}
-        style={
-          isMobile
-            ? {
-                position: 'fixed',
-                left: isMobileMenuOpen ? 0 : '-100%',
-                top: 0,
-                width: '80%',
-                height: '100vh',
-                zIndex: 50,
-                transition: 'left 0.3s ease-in-out',
-                boxShadow: isMobileMenuOpen ? 'var(--shadow-lg)' : 'none',
-                overflowY: 'auto',
-              }
-            : {}
-        }
+        className={`
+          ${styles.sidebar}
+          ${isMobile ? (isMobileMenuOpen ? styles.mobileSidebarOpen : styles.mobileSidebarClosed) : ''}
+        `}
       >
         <div className={styles.brand}>
-          <span>U<span className={styles.brandAccent}>S</span></span>
-          Admin
+          <div className={styles.brandIcon}>
+            <span>US</span>
+          </div>
+          <div className={styles.brandText}>
+            <span className={styles.brandTitle}>Union Sahelienne</span>
+            <span className={styles.brandSub}>Admin Portal</span>
+          </div>
         </div>
 
         <nav className={styles.nav}>
+          <div className={styles.navSection}>Main</div>
           {navItems.map((item) => {
             const isActive = pathname === item.href;
+            const Icon = item.icon;
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 className={`${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
                 onClick={handleNavClick}
-                style={
-                  isMobile
-                    ? {
-                        padding: '16px',
-                        display: 'block',
-                        minHeight: '44px',
-                        lineHeight: '1.5',
-                      }
-                    : {}
-                }
               >
-                {item.label}
+                <div className={styles.navItemInner}>
+                  <Icon size={18} className={styles.navItemIcon} />
+                  <span>{item.label}</span>
+                </div>
+                {isActive && <div className={styles.activeIndicator} />}
+              </Link>
+            );
+          })}
+
+          <div className={styles.navSection} style={{ marginTop: 'var(--space-4)' }}>System</div>
+          {bottomNavItems.map((item) => {
+            const isActive = pathname === item.href;
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
+                onClick={handleNavClick}
+              >
+                <div className={styles.navItemInner}>
+                  <Icon size={18} className={styles.navItemIcon} />
+                  <span>{item.label}</span>
+                </div>
+                {isActive && <div className={styles.activeIndicator} />}
               </Link>
             );
           })}
         </nav>
 
         <div className={styles.footer}>
+          <div className={styles.userInfo}>
+            <div className={styles.userAvatar}>
+              <ShieldCheck size={18} />
+            </div>
+            <div>
+              <div className={styles.userName}>Administrator</div>
+              <div className={styles.userRole}>Super Admin</div>
+            </div>
+          </div>
           <button
             onClick={() => {
               handleLogout();
               handleNavClick();
             }}
             className={styles.logoutBtn}
-            style={
-              isMobile
-                ? {
-                    width: '100%',
-                    padding: '12px 16px',
-                    minHeight: '44px',
-                  }
-                : {}
-            }
           >
+            <LogOut size={16} />
             Sign Out
           </button>
         </div>

@@ -21,17 +21,17 @@
   --color-success: #3E7C59;
   --color-danger: #A33327;
 
-  /* Theme mapping (Default mode is Deep Noir with Warm Accents) */
-  --bg-primary: var(--color-onyx);
-  --bg-secondary: var(--color-onyx-light);
-  --bg-tertiary: var(--color-onyx-muted);
-  
-  --text-primary: var(--color-offwhite);
-  --text-secondary: var(--color-sand);
+  /* Theme mapping (Default mode is Light with Warm Accents) */
+  --bg-primary: var(--color-offwhite);
+  --bg-secondary: #FFFFFF;
+  --bg-tertiary: var(--color-offwhite-dark);
+
+  --text-primary: var(--color-onyx);
+  --text-secondary: var(--color-onyx-muted);
   --text-muted: #888888;
-  
-  --border-color: rgba(230, 213, 195, 0.1); /* Subtle sand border */
-  
+
+  --border-color: rgba(17, 17, 17, 0.1);
+
   --accent-primary: var(--color-terracotta);
   --accent-secondary: var(--color-ochre);
 
@@ -61,17 +61,18 @@
   --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.4);
 }
 
-@media (prefers-color-scheme: light) {
+@media (prefers-color-scheme: dark) {
   :root {
-    /* Optional Light Mode Overrides for flexibility */
-    --bg-primary: var(--color-offwhite);
-    --bg-secondary: #FFFFFF;
-    --bg-tertiary: var(--color-offwhite-dark);
+    /* Dark Mode Overrides */
+    --bg-primary: var(--color-onyx);
+    --bg-secondary: var(--color-onyx-light);
+    --bg-tertiary: var(--color-onyx-muted);
 
-    --text-primary: var(--color-onyx);
-    --text-secondary: var(--color-onyx-muted);
-    
-    --border-color: rgba(17, 17, 17, 0.1);
+    --text-primary: var(--color-offwhite);
+    --text-secondary: var(--color-sand);
+    --text-muted: #888888;
+
+    --border-color: rgba(230, 213, 195, 0.1);
   }
 }
 
@@ -115,6 +116,7 @@ a:hover {
 .layout-container {
   display: flex;
   min-height: 100vh;
+  align-items: stretch;
 }
 
 .main-content {
@@ -124,7 +126,7 @@ a:hover {
   flex-direction: column;
   gap: var(--space-8);
   max-width: 1600px;
-  /* margin: 0 auto; */
+  overflow-y: auto;
 }
 
 /* Animations */

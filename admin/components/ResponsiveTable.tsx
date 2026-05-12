@@ -1,172 +1,140 @@
-/**
- * Reusable Responsive Table Component for Mobile/Desktop views
- */
-import React from 'react';
+'use client';
 
-interface ResponsiveTableColumn {
+import React from 'react';
+import styles from './ResponsiveTable.module.css';
+
+export interface ResponsiveTableColumn<T = any> {
   key: string;
   label: string;
-  render?: (value: any, row: any) => React.ReactNode;
-  mobile?: boolean;
+  render?: (value: any, row: T) => React.ReactNode;
+  mobileOnly?: boolean;
+  desktopOnly?: boolean;
 }
 
-interface ResponsiveTableProps {
-  columns: ResponsiveTableColumn[];
-  data: any[];
+interface ResponsiveTableProps<T = any> {
+  columns: ResponsiveTableColumn<T>[];
+  data: T[];
   loading?: boolean;
   error?: string | null;
   loadingMessage?: string;
   emptyMessage?: string;
   isMobile?: boolean;
-  tableStyles?: any;
-  renderRowActions?: (row: any) => React.ReactNode;
+  title?: string;
+  renderRowActions?: (row: T) => React.ReactNode;
+  headerActions?: React.ReactNode;
 }
 
-export const ResponsiveTable: React.FC<ResponsiveTableProps> = ({
+export function ResponsiveTable<T = any>({
   columns,
   data,
   loading = false,
   error = null,
-  loadingMessage = 'Chargement en cours...',
-  emptyMessage = 'Aucune donnée disponible.',
+  loadingMessage = 'Loading data...',
+  emptyMessage = 'No data available.',
   isMobile = false,
-  tableStyles = {},
+  title,
   renderRowActions,
-}) => {
+  headerActions,
+}: ResponsiveTableProps<T>) {
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-secondary)' }}>
-        {loadingMessage}
+      <div className={styles.tableContainer}>
+        {title && <div className={styles.tableHeader}><div className={styles.tableTitle}>{title}</div></div>}
+        <div className={styles.statusContainer}>
+          <span className={styles.loader}></span>
+          <p>{loadingMessage}</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-secondary)' }}>
-        {error}
+      <div className={styles.tableContainer}>
+        {title && <div className={styles.tableHeader}><div className={styles.tableTitle}>{title}</div></div>}
+        <div className={styles.statusContainer}>
+          <p style={{ color: 'var(--color-danger)' }}>{error}</p>
+        </div>
       </div>
     );
   }
 
-  if (data.length === 0) {
-    return (
-      <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-secondary)' }}>
-        {emptyMessage}
-      </div>
-    );
-  }
+  const renderContent = () => {
+    if (data.length === 0) {
+      return (
+        <div className={styles.statusContainer}>
+          <p>{emptyMessage}</p>
+        </div>
+      );
+    }
 
-  if (isMobile) {
-    // Mobile Card View
-    return (
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr',
-          gap: '12px',
-          padding: '12px',
-        }}
-      >
-        {data.map((row, idx) => (
-          <div
-            key={idx}
-            style={{
-              backgroundColor: 'var(--bg-secondary)',
-              border: '1px solid var(--border-color)',
-              borderRadius: 'var(--radius-sm)',
-              padding: '16px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '12px',
-            }}
-          >
-            {columns.map((column) => (
-              <div key={column.key} style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                <div style={{ fontWeight: '600', marginBottom: '4px', color: 'var(--text-primary)' }}>
-                  {column.label}
+    if (isMobile) {
+      return (
+        <div className={styles.mobileGrid}>
+          {data.map((row, idx) => (
+            <div key={idx} className={styles.mobileCard}>
+              {columns.filter(col => !col.desktopOnly).map((column) => (
+                <div key={column.key} className={styles.mobileField}>
+                  <div className={styles.mobileLabel}>{column.label}</div>
+                  <div className={styles.mobileValue}>
+                    {column.render ? column.render((row as any)[column.key], row) : (row as any)[column.key]}
+                  </div>
                 </div>
-                <div>
-                  {column.render ? column.render(row[column.key], row) : row[column.key]}
+              ))}
+              {renderRowActions && (
+                <div className={styles.mobileActions}>
+                  {renderRowActions(row)}
                 </div>
-              </div>
-            ))}
-            {renderRowActions && (
-              <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--border-color)' }}>
-                {renderRowActions(row)}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  // Desktop Table View
-  return (
-    <table style={{ width: '100%', borderCollapse: 'collapse', ...tableStyles }}>
-      <thead>
-        <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
-          {columns.map((column) => (
-            <th
-              key={column.key}
-              style={{
-                padding: '12px 16px',
-                textAlign: 'left',
-                fontWeight: '600',
-                fontSize: '13px',
-                color: 'var(--text-primary)',
-                backgroundColor: 'var(--bg-tertiary)',
-              }}
-            >
-              {column.label}
-            </th>
+              )}
+            </div>
           ))}
-          {renderRowActions && (
-            <th
-              style={{
-                padding: '12px 16px',
-                textAlign: 'center',
-                fontWeight: '600',
-                fontSize: '13px',
-                color: 'var(--text-primary)',
-                backgroundColor: 'var(--bg-tertiary)',
-              }}
-            >
-              Actions
-            </th>
-          )}
-        </tr>
-      </thead>
-      <tbody>
-        {data.map((row, idx) => (
-          <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)', cursor: 'pointer' }}>
-            {columns.map((column) => (
-              <td
-                key={column.key}
-                style={{
-                  padding: '12px 16px',
-                  fontSize: '14px',
-                  color: 'var(--text-primary)',
-                }}
-              >
-                {column.render ? column.render(row[column.key], row) : row[column.key]}
-              </td>
+        </div>
+      );
+    }
+
+    return (
+      <div className={styles.tableWrapper}>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              {columns.filter(col => !col.mobileOnly).map((column) => (
+                <th key={column.key} className={styles.th}>
+                  {column.label}
+                </th>
+              ))}
+              {renderRowActions && <th className={styles.th} style={{ textAlign: 'center' }}>Actions</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((row, idx) => (
+              <tr key={idx} className={styles.tr}>
+                {columns.filter(col => !col.mobileOnly).map((column) => (
+                  <td key={column.key} className={styles.td}>
+                    {column.render ? column.render((row as any)[column.key], row) : (row as any)[column.key]}
+                  </td>
+                ))}
+                {renderRowActions && (
+                  <td className={styles.td} style={{ textAlign: 'center' }}>
+                    {renderRowActions(row)}
+                  </td>
+                )}
+              </tr>
             ))}
-            {renderRowActions && (
-              <td
-                style={{
-                  padding: '12px 16px',
-                  textAlign: 'center',
-                  fontSize: '14px',
-                }}
-              >
-                {renderRowActions(row)}
-              </td>
-            )}
-          </tr>
-        ))}
-      </tbody>
-    </table>
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
+  return (
+    <div className={styles.tableContainer}>
+      {(title || headerActions) && (
+        <div className={styles.tableHeader}>
+          {title && <div className={styles.tableTitle}>{title}</div>}
+          {headerActions && <div className={styles.headerActions}>{headerActions}</div>}
+        </div>
+      )}
+      {renderContent()}
+    </div>
   );
-};
+}

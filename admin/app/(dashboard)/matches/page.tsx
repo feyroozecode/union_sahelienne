@@ -1,186 +1,226 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { fetchApi, getErrorMessage } from '@/lib/api';
 import { formatDate, formatUserLabel } from '@/lib/format';
 import type { AdminMatch } from '@/lib/types';
 import { useIsMobile } from '@/hooks/useMediaQuery';
-import tableStyles from '@/components/Table.module.css';
-import pageStyles from './page.module.css';
+import { ResponsiveTable, type ResponsiveTableColumn } from '@/components/ResponsiveTable';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { Drawer } from '@/components/ui/Drawer';
+import { Eye, Clock, User, Heart, MessageSquare } from 'lucide-react';
+import styles from './page.module.css';
 
 export default function MatchesPage() {
   const isMobile = useIsMobile();
   const [matches, setMatches] = useState<AdminMatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedMatch, setSelectedMatch] = useState<AdminMatch | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  useEffect(() => {
-    let isActive = true;
-
-    fetchApi<AdminMatch[]>('/admin/matches')
-      .then((data) => {
-        if (isActive) {
-          setMatches(data);
-        }
-      })
-      .catch((error) => {
-        if (isActive) {
-          setError(getErrorMessage(error, 'Failed to load matches.'));
-        }
-        console.error('Failed to fetch matches', error);
-      })
-      .finally(() => {
-        if (isActive) {
-          setLoading(false);
-        }
-      });
-
-    return () => {
-      isActive = false;
-    };
+  const fetchMatches = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await fetchApi<AdminMatch[]>('/admin/matches');
+      setMatches(data);
+      setError(null);
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to load matches.'));
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
+  useEffect(() => {
+    fetchMatches();
+  }, [fetchMatches]);
+
+  const handleViewDetails = (match: AdminMatch) => {
+    setSelectedMatch(match);
+    setIsDrawerOpen(true);
+  };
+
+  const columns: ResponsiveTableColumn<AdminMatch>[] = [
+    { key: 'id', label: 'ID', render: (val) => `#${val}` },
+    { 
+      key: 'requester', 
+      label: 'Requester', 
+      render: (_, match) => (
+        <div className={styles.memberCell}>
+          <div className={styles.memberName}>{formatUserLabel(match.requester, `User #${match.requesterId}`)}</div>
+          <div className={styles.memberMeta}>ID: #{match.requesterId}</div>
+        </div>
+      )
+    },
+    { 
+      key: 'target', 
+      label: 'Target', 
+      render: (_, match) => (
+        <div className={styles.memberCell}>
+          <div className={styles.memberName}>{formatUserLabel(match.target, `User #${match.targetId}`)}</div>
+          <div className={styles.memberMeta}>ID: #{match.targetId}</div>
+        </div>
+      )
+    },
+    { 
+      key: 'status', 
+      label: 'Status', 
+      render: (val) => (
+        <Badge 
+          variant={
+            val === 'accepted' ? 'success' : 
+            val === 'pending' ? 'warning' : 
+            val === 'rejected' ? 'error' : 'neutral'
+          }
+        >
+          {val}
+        </Badge>
+      )
+    },
+    { 
+      key: 'createdAt', 
+      label: 'Created', 
+      render: (val) => formatDate(val),
+      desktopOnly: true
+    },
+  ];
+
+  const renderActions = (match: AdminMatch) => (
+    <div style={{ display: 'flex', gap: '8px', justifyContent: isMobile ? 'flex-start' : 'center' }}>
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        onClick={() => handleViewDetails(match)} 
+        title="View Full Details"
+      >
+        <Eye size={18} />
+      </Button>
+    </div>
+  );
+
   return (
-    <>
-      <header className={`${pageStyles.header} animate-fade-in-up stagger-1`}>
+    <div className="animate-fade-in-up">
+      <header className={styles.header}>
         <div>
           <h1>Match Pipeline</h1>
-          <p>Monitor connecting user relationships</p>
+          <p>Monitor connecting user relationships and match lifecycle</p>
         </div>
       </header>
 
-      <div className={`${tableStyles.tableContainer} animate-fade-in-up stagger-2`}>
-        <div className={tableStyles.tableHeader}>
-          <div className={tableStyles.tableTitle}>All Matches</div>
-        </div>
-        <div style={{ overflowX: isMobile ? 'hidden' : 'auto' }}>
-          {isMobile ? (
-            // Mobile Card View
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr',
-                gap: '12px',
-                padding: '12px',
-              }}
-            >
-              {loading ? (
-                <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-secondary)' }}>
-                  Loading matches...
-                </div>
-              ) : error ? (
-                <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-secondary)' }}>
-                  {error}
-                </div>
-              ) : matches.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-secondary)' }}>
-                  No matches found.
-                </div>
-              ) : (
-                matches.map((match) => (
-                  <div
-                    key={match.id}
-                    style={{
-                      backgroundColor: 'var(--bg-secondary)',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: 'var(--radius-sm)',
-                      padding: '16px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '12px',
-                    }}
-                  >
-                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                      Match ID: #{match.id}
-                    </div>
+      <ResponsiveTable
+        title="All Connections"
+        columns={columns}
+        data={matches}
+        loading={loading}
+        error={error}
+        isMobile={isMobile}
+        renderRowActions={renderActions}
+      />
 
-                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <div>
-                        <strong>Requester:</strong> {formatUserLabel(match.requester, `User #${match.requesterId}`)}
-                      </div>
-                      <div>
-                        <strong>Target:</strong> {formatUserLabel(match.target, `User #${match.targetId}`)}
-                      </div>
-                      <div>
-                        <strong>Status:</strong>{' '}
-                        {match.status === 'accepted' ? (
-                          <span style={{ color: 'var(--color-success)' }}>Accepted</span>
-                        ) : match.status === 'pending' ? (
-                          <span style={{ color: 'var(--color-warning)' }}>Pending</span>
-                        ) : match.status === 'rejected' ? (
-                          <span style={{ color: 'var(--color-danger)' }}>Rejected</span>
-                        ) : (
-                          <span>{match.status}</span>
-                        )}
-                      </div>
-                      <div><strong>Created:</strong> {formatDate(match.createdAt)}</div>
-                    </div>
+      <Drawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        title={`Match #${selectedMatch?.id} Details`}
+        size="md"
+      >
+        {selectedMatch && (
+          <div className={styles.drawerContent}>
+            <div className={styles.drawerSection}>
+              <div className={styles.sectionTitle}>
+                <Clock size={16} />
+                Match Timeline
+              </div>
+              <div className={styles.timelineItem}>
+                <div className={styles.timelinePoint} />
+                <div>
+                  <div className={styles.timelineLabel}>Initiated</div>
+                  <div className={styles.timelineValue}>{formatDate(selectedMatch.createdAt)}</div>
+                </div>
+              </div>
+              <div className={styles.timelineItem}>
+                <div className={`${styles.timelinePoint} ${selectedMatch.status !== 'pending' ? styles.pointSuccess : ''}`} />
+                <div>
+                  <div className={styles.timelineLabel}>Current Status</div>
+                  <div className={styles.timelineValue}>
+                    <Badge 
+                      variant={
+                        selectedMatch.status === 'accepted' ? 'success' : 
+                        selectedMatch.status === 'pending' ? 'warning' : 
+                        selectedMatch.status === 'rejected' ? 'error' : 'neutral'
+                      }
+                    >
+                      {selectedMatch.status}
+                    </Badge>
                   </div>
-                ))
-              )}
+                </div>
+              </div>
             </div>
-          ) : (
-            // Desktop Table View
-            <table className={tableStyles.table}>
-              <thead>
-                <tr>
-                  <th className={tableStyles.th}>ID</th>
-                  <th className={tableStyles.th}>Requester</th>
-                  <th className={tableStyles.th}>Target</th>
-                  <th className={tableStyles.th}>Status</th>
-                  <th className={tableStyles.th}>Created At</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan={5} className={tableStyles.td} style={{ textAlign: 'center' }}>
-                      Loading matches...
-                    </td>
-                  </tr>
-                ) : error ? (
-                  <tr>
-                    <td colSpan={5} className={tableStyles.td} style={{ textAlign: 'center' }}>
-                      {error}
-                    </td>
-                  </tr>
-                ) : matches.map((match) => (
-                  <tr key={match.id} className={tableStyles.tr}>
-                    <td className={tableStyles.td}>#{match.id}</td>
-                    <td className={tableStyles.td}>
-                      {formatUserLabel(match.requester, `User #${match.requesterId}`)}
-                    </td>
-                    <td className={tableStyles.td}>
-                      {formatUserLabel(match.target, `User #${match.targetId}`)}
-                    </td>
-                    <td className={tableStyles.td}>
-                      {match.status === 'accepted' ? (
-                        <span className={`${tableStyles.badge} ${tableStyles.badgeSuccess}`}>Accepted</span>
-                      ) : match.status === 'pending' ? (
-                        <span className={`${tableStyles.badge} ${tableStyles.badgePending}`}>Pending</span>
-                      ) : match.status === 'rejected' ? (
-                        <span className={`${tableStyles.badge} ${tableStyles.badgeDanger}`}>Rejected</span>
-                      ) : (
-                        <span className={tableStyles.badge} style={{ background: 'var(--bg-tertiary)' }}>{match.status}</span>
-                      )}
-                    </td>
-                    <td className={tableStyles.td}>
-                      {formatDate(match.createdAt)}
-                    </td>
-                  </tr>
-                ))}
-                {!loading && matches.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className={tableStyles.td} style={{ textAlign: 'center' }}>
-                      No matches found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </div>
-    </>
+
+            <div className={styles.drawerSection}>
+              <div className={styles.sectionTitle}>
+                <User size={16} />
+                Participants
+              </div>
+              <div className={styles.participantGrid}>
+                <div className={styles.participantCard}>
+                  <div className={styles.participantLabel}>Requester</div>
+                  <div className={styles.participantName}>
+                    {formatUserLabel(selectedMatch.requester, `User #${selectedMatch.requesterId}`)}
+                  </div>
+                  <div className={styles.participantId}>ID: #{selectedMatch.requesterId}</div>
+                  <Button variant="outline" size="sm" fullWidth className={styles.viewProfileBtn}>
+                    View Profile
+                  </Button>
+                </div>
+                <div className={styles.participantCard}>
+                  <div className={styles.participantLabel}>Target</div>
+                  <div className={styles.participantName}>
+                    {formatUserLabel(selectedMatch.target, `User #${selectedMatch.targetId}`)}
+                  </div>
+                  <div className={styles.participantId}>ID: #{selectedMatch.targetId}</div>
+                  <Button variant="outline" size="sm" fullWidth className={styles.viewProfileBtn}>
+                    View Profile
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.drawerSection}>
+              <div className={styles.sectionTitle}>
+                <Heart size={16} />
+                Match Statistics
+              </div>
+              <div className={styles.statsGrid}>
+                <div className={styles.statItem}>
+                  <div className={styles.statLabel}>Response Time</div>
+                  <div className={styles.statValue}>2.4 Hours</div>
+                </div>
+                <div className={styles.statItem}>
+                  <div className={styles.statLabel}>Credit Cost</div>
+                  <div className={styles.statValue}>1 Credit</div>
+                </div>
+              </div>
+            </div>
+
+            {selectedMatch.status === 'accepted' && (
+              <div className={styles.drawerSection}>
+                <div className={styles.sectionTitle}>
+                  <MessageSquare size={16} />
+                  Communication
+                </div>
+                <div className={styles.infoBox}>
+                  Chat is active for this match. 28 days remaining.
+                </div>
+                <Button variant="secondary" fullWidth style={{ marginTop: '12px' }}>
+                  Inspect Conversation
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+      </Drawer>
+    </div>
   );
 }

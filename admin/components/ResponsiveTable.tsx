@@ -10,6 +10,7 @@ interface ResponsiveTableColumn {
   mobile?: boolean;
 }
 
+
 interface ResponsiveTableProps {
   columns: ResponsiveTableColumn[];
   data: any[];

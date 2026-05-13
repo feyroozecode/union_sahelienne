@@ -61,15 +61,49 @@
   --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.4);
 }
 
+/* Explicit Dark Mode */
+[data-theme='dark'],
+:root {
+  --bg-primary: var(--color-onyx);
+  --bg-secondary: var(--color-onyx-light);
+  --bg-tertiary: var(--color-onyx-muted);
+  
+  --text-primary: var(--color-offwhite);
+  --text-secondary: var(--color-sand);
+  --text-muted: #888888;
+  
+  --border-color: rgba(230, 213, 195, 0.1);
+  
+  --accent-primary: var(--color-terracotta);
+  --accent-secondary: var(--color-ochre);
+}
+
+/* Explicit Light Mode */
+[data-theme='light'] {
+  --bg-primary: var(--color-offwhite);
+  --bg-secondary: #FFFFFF;
+  --bg-tertiary: var(--color-offwhite-dark);
+
+  --text-primary: var(--color-onyx);
+  --text-secondary: var(--color-onyx-muted);
+  --text-muted: #666666;
+  
+  --border-color: rgba(17, 17, 17, 0.1);
+  
+  --accent-primary: var(--color-terracotta);
+  --accent-secondary: var(--color-ochre);
+}
+
+/* System preference fallback */
 @media (prefers-color-scheme: light) {
-  :root {
-    /* Optional Light Mode Overrides for flexibility */
+  :root:not([data-theme]) {
     --bg-primary: var(--color-offwhite);
     --bg-secondary: #FFFFFF;
     --bg-tertiary: var(--color-offwhite-dark);
 
     --text-primary: var(--color-onyx);
     --text-secondary: var(--color-onyx-muted);
+    --text-muted: #666666;
     
     --border-color: rgba(17, 17, 17, 0.1);
   }

@@ -1,0 +1,35 @@
+.toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-secondary);
+  color: var(--accent-primary);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 0;
+  font-size: 0;
+}
+
+.toggle:hover {
+  background-color: var(--bg-tertiary);
+  border-color: var(--accent-primary);
+  transform: scale(1.05);
+}
+
+.toggle:active {
+  transform: scale(0.95);
+}
+
+.icon {
+  stroke-width: 2;
+}
+
+.placeholder {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+}

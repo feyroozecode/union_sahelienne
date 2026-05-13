@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { removeToken } from '@/lib/api';
 import { useIsMobile } from '@/hooks/useMediaQuery';
+import { ThemeToggle } from './ThemeToggle';
 import styles from './Sidebar.module.css';
 
 const navItems = [
@@ -48,30 +49,34 @@ export default function Sidebar() {
             position: 'sticky',
             top: 0,
             zIndex: 40,
+            gap: '8px',
           }}
         >
           <div style={{ fontSize: '18px', fontWeight: '600', color: 'var(--text-primary)' }}>
             U-<span style={{ color: 'var(--accent-primary)' }}>S</span> Admin
           </div>
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '24px',
-              cursor: 'pointer',
-              color: 'var(--text-primary)',
-              padding: '8px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              minWidth: '44px',
-              minHeight: '44px',
-            }}
-            aria-label="Toggle menu"
-          >
-            ☰
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto' }}>
+            <ThemeToggle />
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              style={{
+                background: 'none',
+                border: 'none',
+                fontSize: '24px',
+                cursor: 'pointer',
+                color: 'var(--text-primary)',
+                padding: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minWidth: '44px',
+                minHeight: '44px',
+              }}
+              aria-label="Toggle menu"
+            >
+              ☰
+            </button>
+          </div>
         </div>
       )}
 
@@ -113,6 +118,9 @@ export default function Sidebar() {
         <div className={styles.brand}>
           <span>U<span className={styles.brandAccent}>S</span></span>
           Admin
+          <div style={{ marginLeft: 'auto' }}>
+            <ThemeToggle />
+          </div>
         </div>
 
         <nav className={styles.nav}>
@@ -141,7 +149,7 @@ export default function Sidebar() {
           })}
         </nav>
 
-        <div className={styles.footer}>
+        <div className={styles.footer}>s
           <button
             onClick={() => {
               handleLogout();

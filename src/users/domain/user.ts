@@ -101,6 +101,12 @@ export class User {
   @Expose({ groups: ['me', 'admin'] })
   lastLoginAt?: Date | null;
 
+  @Exclude({ toPlainOnly: true })
+  waitlistReason?: string | null;
+
+  @Exclude({ toPlainOnly: true })
+  waitlistedAt?: Date | null;
+
   @ApiProperty()
   createdAt: Date;
 

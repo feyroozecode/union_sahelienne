@@ -46,6 +46,8 @@ export class UserMapper {
     domainEntity.createdAt = raw.createdAt;
     domainEntity.updatedAt = raw.updatedAt;
     domainEntity.deletedAt = (raw.deletedAt ?? null) as Date;
+    domainEntity.waitlistReason = raw.waitlistReason ?? null;
+    domainEntity.waitlistedAt = raw.waitlistedAt ?? null;
     return domainEntity;
   }
 
@@ -71,6 +73,8 @@ export class UserMapper {
       statusId: domainEntity.status ? Number(domainEntity.status.id) : null,
       createdAt: domainEntity.createdAt,
       deletedAt: domainEntity.deletedAt,
+      waitlistReason: domainEntity.waitlistReason ?? null,
+      waitlistedAt: domainEntity.waitlistedAt ?? null,
     };
   }
 }

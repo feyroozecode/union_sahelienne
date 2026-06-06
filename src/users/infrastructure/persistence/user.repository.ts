@@ -51,4 +51,10 @@ export abstract class UserRepository {
   ): Promise<User | null>;
 
   abstract remove(id: User['id']): Promise<void>;
+
+  abstract getWaitlistPosition(
+    userId: User['id'],
+    reason: string,
+    since: Date,
+  ): Promise<number>;
 }

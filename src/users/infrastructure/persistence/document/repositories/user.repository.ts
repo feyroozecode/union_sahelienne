@@ -144,4 +144,16 @@ export class UsersDocumentRepository implements UserRepository {
       _id: id.toString(),
     });
   }
+
+  async getWaitlistPosition(
+    _userId: User['id'],
+    _reason: string,
+    _since: Date,
+  ): Promise<number> {
+    return this.usersModel.countDocuments({
+      waitlistReason: _reason,
+      waitlistedAt: { $lt: _since },
+      _id: { $ne: _userId.toString() },
+    });
+  }
 }

@@ -170,4 +170,19 @@ export class UsersRelationalRepository implements UserRepository {
       data: { deletedAt: new Date() },
     });
   }
+
+  async getWaitlistPosition(
+    userId: User['id'],
+    reason: string,
+    since: Date,
+  ): Promise<number> {
+    return this.prisma.user.count({
+      where: {
+        waitlistReason: reason,
+        waitlistedAt: { lt: since },
+        deletedAt: null,
+        id: { not: Number(userId) },
+      },
+    });
+  }
 }

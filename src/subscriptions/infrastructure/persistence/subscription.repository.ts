@@ -7,13 +7,20 @@ export abstract class SubscriptionRepository {
     data: Omit<Subscription, 'id' | 'createdAt' | 'updatedAt'>,
   ): Promise<Subscription>;
 
-  abstract findById(id: Subscription['id']): Promise<NullableType<Subscription>>;
+  abstract findById(
+    id: Subscription['id'],
+  ): Promise<NullableType<Subscription>>;
 
-  abstract findActiveByUserId(userId: number): Promise<NullableType<Subscription>>;
+  abstract findActiveByUserId(
+    userId: number,
+  ): Promise<NullableType<Subscription>>;
 
   abstract findByUserId(userId: number): Promise<Subscription[]>;
 
-  abstract findAll(filters?: { tier?: string; status?: string }): Promise<Subscription[]>;
+  abstract findAll(filters?: {
+    tier?: string;
+    status?: string;
+  }): Promise<Subscription[]>;
 
   abstract update(
     id: Subscription['id'],

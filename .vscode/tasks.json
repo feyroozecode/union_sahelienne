@@ -65,7 +65,19 @@
       "command": "cd admin && npm run dev",
       "options": { "cwd": "${workspaceFolder}" },
       "isBackground": true,
-      "problemMatcher": [],
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^(.*)$",
+          "file": 0,
+          "line": 0,
+          "column": 0
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*",
+          "endsPattern": "\\- Local:"
+        }
+      },
       "presentation": { "group": "frontend", "reveal": "always", "panel": "dedicated" }
     },
     // ── Full stack ──────────────────────────────────────────────────

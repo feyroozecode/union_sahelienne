@@ -9,7 +9,9 @@ import { ReportMapper } from '../mappers/report.mapper';
 export class ReportRelationalRepository implements ReportRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(data: Omit<Report, 'id' | 'createdAt' | 'updatedAt'>): Promise<Report> {
+  async create(
+    data: Omit<Report, 'id' | 'createdAt' | 'updatedAt'>,
+  ): Promise<Report> {
     const entity = await this.prisma.report.create({
       data: {
         reporterId: data.reporterId,
@@ -55,9 +57,15 @@ export class ReportRelationalRepository implements ReportRepository {
       where: { id },
       data: {
         ...(payload.status !== undefined ? { status: payload.status } : {}),
-        ...(payload.reviewedBy !== undefined ? { reviewedBy: payload.reviewedBy } : {}),
-        ...(payload.reviewedAt !== undefined ? { reviewedAt: payload.reviewedAt } : {}),
-        ...(payload.description !== undefined ? { description: payload.description } : {}),
+        ...(payload.reviewedBy !== undefined
+          ? { reviewedBy: payload.reviewedBy }
+          : {}),
+        ...(payload.reviewedAt !== undefined
+          ? { reviewedAt: payload.reviewedAt }
+          : {}),
+        ...(payload.description !== undefined
+          ? { description: payload.description }
+          : {}),
       },
     });
     return ReportMapper.toDomain(entity);

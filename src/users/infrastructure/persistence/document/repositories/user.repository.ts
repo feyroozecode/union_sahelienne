@@ -36,7 +36,7 @@ export class UsersDocumentRepository implements UserRepository {
     const where: FilterQuery<UserSchemaClass> = {};
     if (filterOptions?.roles?.length) {
       where['role._id'] = {
-        $in: filterOptions.roles.map((role) => role.id.toString()),
+        $in: filterOptions.roles.map((role) => role.id?.toString()),
       };
     }
 
@@ -143,5 +143,41 @@ export class UsersDocumentRepository implements UserRepository {
     await this.usersModel.deleteOne({
       _id: id.toString(),
     });
+  }
+
+  async getWaitlistPosition(
+    _userId: User['id'],
+    _reason: string,
+    _since: Date,
+  ): Promise<number> {
+    return this.usersModel.countDocuments({
+      waitlistReason: _reason,
+      waitlistedAt: { $lt: _since },
+      _id: { $ne: _userId.toString() },
+    });
+  }
+
+  // Waitlist gender-balance is a relational-only feature: it depends on the
+  // Profile relation (gender + isValidated) that the document schema does not
+  // model. The app runs on PostgreSQL, so these throw loudly if Mongo is ever
+  // enabled rather than returning silently-wrong data.
+  countValidatedByGender(): Promise<{ male: number; female: number }> {
+    throw new Error(
+      'countValidatedByGender is not supported for document persistence',
+    );
+  }
+
+  findOldestWaitlistedByGender(
+    _gender: 'male' | 'female',
+  ): Promise<Array<Pick<User, 'id'>>> {
+    throw new Error(
+      'findOldestWaitlistedByGender is not supported for document persistence',
+    );
+  }
+
+  findWaitlisted(_filter?: {
+    gender?: 'male' | 'female';
+  }): Promise<User[]> {
+    throw new Error('findWaitlisted is not supported for document persistence');
   }
 }

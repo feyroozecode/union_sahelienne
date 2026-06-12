@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class OtpChallengeResponseDto {
   @ApiProperty({
@@ -20,4 +20,10 @@ export class OtpChallengeResponseDto {
     example: 1760000000000,
   })
   expiresAt: number;
+
+  @ApiPropertyOptional({
+    description: 'OTP code (only returned in pre-beta mode for testing)',
+    example: '123456',
+  })
+  code?: string;
 }

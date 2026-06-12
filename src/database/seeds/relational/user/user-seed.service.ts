@@ -65,6 +65,9 @@ interface TestUser {
   creditsUsed?: number;
   // R3: subscription data
   subscriptionTier?: Tier;
+  // Waitlist: paid but held until the gender ratio allows activation
+  waitlist?: boolean;
+  waitlistDaysAgo?: number;
 }
 
 @Injectable()
@@ -305,6 +308,41 @@ export class UserSeedService {
         validated: false,
         paymentValidated: false,
       },
+      // ── Waitlisted (payment validated but gender ratio blocked them) ─────
+      {
+        firstName: 'Mariam',
+        lastName: 'Touré',
+        email: 'mariam.w@test.com',
+        phone: '+223700000020',
+        gender: 'female',
+        age: 28,
+        profession: 'Comptable',
+        maritalStatus: 'Célibataire',
+        country: 'Mali',
+        city: 'Sikasso',
+        validated: false,
+        paymentValidated: true,
+        subscriptionTier: 'lite',
+        waitlist: true,
+        waitlistDaysAgo: 5,
+      },
+      {
+        firstName: 'Souleymane',
+        lastName: 'Maïga',
+        email: 'souleymane.w@test.com',
+        phone: '+223700000021',
+        gender: 'male',
+        age: 31,
+        profession: 'Agronome',
+        maritalStatus: 'Célibataire',
+        country: 'Mali',
+        city: 'Mopti',
+        validated: false,
+        paymentValidated: true,
+        subscriptionTier: 'lite',
+        waitlist: true,
+        waitlistDaysAgo: 1,
+      },
     ];
 
     // Track created/existing users for match seeding (index = position in testUsers array)
@@ -337,7 +375,9 @@ export class UserSeedService {
         continue;
       }
 
-      const statusId = u.statusInactive ? StatusEnum.inactive : StatusEnum.active;
+      const statusId = u.statusInactive
+        ? StatusEnum.inactive
+        : StatusEnum.active;
 
       const user = await this.prisma.user.create({
         data: {
@@ -355,13 +395,23 @@ export class UserSeedService {
       let paymentId: number | undefined;
 
       if (!u.incomplete && !u.statusInactive) {
-        const isComplete = !!(u.gender && u.maritalStatus && u.country && u.city);
+        const isComplete = !!(
+          u.gender &&
+          u.maritalStatus &&
+          u.country &&
+          u.city
+        );
         const isValidated = !!(u.validated && isComplete);
         const termsAcceptedAt = isComplete ? new Date() : null;
 
         const tier = u.subscriptionTier ?? 'lite';
         const tierConfig = TIERS[tier];
-        const totalCredits = tierConfig.creditsGranted + tierConfig.creditsBonus;
+        const totalCredits =
+          tierConfig.creditsGranted + tierConfig.creditsBonus;
+
+        // Waitlist users: payment was validated but profile held inactive
+        const isWaitlisted = !!u.waitlist;
+        const effectiveValidated = isWaitlisted ? false : isValidated;
 
         await this.prisma.profile.create({
           data: {
@@ -375,7 +425,7 @@ export class UserSeedService {
             ethnicity: u.ethnicity ?? undefined,
             termsAcceptedAt,
             isComplete,
-            isValidated,
+            isValidated: effectiveValidated,
             ...(isValidated
               ? {
                   subscriptionType: tier,
@@ -385,6 +435,20 @@ export class UserSeedService {
               : {}),
           },
         });
+
+        if (isWaitlisted) {
+          const daysAgo = u.waitlistDaysAgo ?? 0;
+          const waitlistedAt = new Date(
+            Date.now() - daysAgo * 24 * 60 * 60 * 1000,
+          );
+          await this.prisma.user.update({
+            where: { id: user.id },
+            data: {
+              waitlistReason: 'gender_balance',
+              waitlistedAt,
+            },
+          });
+        }
 
         // ── Payment record ─────────────────────────────────────────────────
         if (u.paymentValidated) {
@@ -407,7 +471,10 @@ export class UserSeedService {
           );
           const bonusExpiresAt =
             tierConfig.bonusValidityDays > 0
-              ? new Date(now.getTime() + tierConfig.bonusValidityDays * 24 * 60 * 60 * 1000)
+              ? new Date(
+                  now.getTime() +
+                    tierConfig.bonusValidityDays * 24 * 60 * 60 * 1000,
+                )
               : null;
 
           await this.prisma.subscription.create({
@@ -447,7 +514,12 @@ export class UserSeedService {
           });
         }
 
-        createdUsers.push({ id: user.id, email: u.email, validated: isValidated, paymentId });
+        createdUsers.push({
+          id: user.id,
+          email: u.email,
+          validated: isValidated,
+          paymentId,
+        });
       } else {
         // Incomplete or inactive: minimal profile
         if (!u.statusInactive) {
@@ -489,9 +561,7 @@ export class UserSeedService {
       if (!requester || !target) continue;
       if (!requester.validated || !target.validated) continue;
 
-      const pairKey = [requester.id, target.id]
-        .sort((a, b) => a - b)
-        .join(':');
+      const pairKey = [requester.id, target.id].sort((a, b) => a - b).join(':');
 
       const existingMatch = await this.prisma.match.findUnique({
         where: { pairKey },
@@ -499,7 +569,9 @@ export class UserSeedService {
 
       if (!existingMatch) {
         const now = new Date();
-        const chatExpiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+        const chatExpiresAt = new Date(
+          now.getTime() + 30 * 24 * 60 * 60 * 1000,
+        );
 
         await this.prisma.match.create({
           data: {
@@ -514,7 +586,10 @@ export class UserSeedService {
 
         // Sync creditsUsed on both subscriptions
         await this.prisma.subscription.updateMany({
-          where: { userId: { in: [requester.id, target.id] }, status: 'active' },
+          where: {
+            userId: { in: [requester.id, target.id] },
+            status: 'active',
+          },
           data: { creditsUsed: { increment: 1 } },
         });
         // Sync profile credits cache
@@ -523,7 +598,9 @@ export class UserSeedService {
           data: { matchCreditsUsed: { increment: 1 } },
         });
 
-        console.log(`[seed] Match created: ${requester.email} ↔ ${target.email}`);
+        console.log(
+          `[seed] Match created: ${requester.email} ↔ ${target.email}`,
+        );
       }
     }
 
@@ -540,11 +617,30 @@ export class UserSeedService {
 
       if (existingMessages === 0) {
         const sampleMessages = [
-          { senderId: firstMatch.requesterId, content: 'Assalamu Alaikum, comment allez-vous ?' },
-          { senderId: firstMatch.targetId, content: 'Wa Alaikum Assalam ! Je vais bien, Alhamdulillah. Et vous ?' },
-          { senderId: firstMatch.requesterId, content: 'Très bien merci. Je suis heureux de vous avoir trouvé sur cette plateforme.' },
-          { senderId: firstMatch.targetId, content: 'Moi aussi. Je suis enseignante à Ouagadougou. Et vous, quelle est votre activité ?' },
-          { senderId: firstMatch.requesterId, content: 'Je suis médecin à Ségou. J\'espère qu\'on pourra mieux se connaître.' },
+          {
+            senderId: firstMatch.requesterId,
+            content: 'Assalamu Alaikum, comment allez-vous ?',
+          },
+          {
+            senderId: firstMatch.targetId,
+            content:
+              'Wa Alaikum Assalam ! Je vais bien, Alhamdulillah. Et vous ?',
+          },
+          {
+            senderId: firstMatch.requesterId,
+            content:
+              'Très bien merci. Je suis heureux de vous avoir trouvé sur cette plateforme.',
+          },
+          {
+            senderId: firstMatch.targetId,
+            content:
+              'Moi aussi. Je suis enseignante à Ouagadougou. Et vous, quelle est votre activité ?',
+          },
+          {
+            senderId: firstMatch.requesterId,
+            content:
+              "Je suis médecin à Ségou. J'espère qu'on pourra mieux se connaître.",
+          },
         ];
 
         for (const msg of sampleMessages) {
@@ -556,7 +652,9 @@ export class UserSeedService {
             },
           });
         }
-        console.log(`[seed] Sample messages created in match #${firstMatch.id}`);
+        console.log(
+          `[seed] Sample messages created in match #${firstMatch.id}`,
+        );
       }
     }
 

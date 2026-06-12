@@ -51,4 +51,23 @@ export abstract class UserRepository {
   ): Promise<User | null>;
 
   abstract remove(id: User['id']): Promise<void>;
+
+  abstract getWaitlistPosition(
+    userId: User['id'],
+    reason: string,
+    since: Date,
+  ): Promise<number>;
+
+  abstract countValidatedByGender(): Promise<{
+    male: number;
+    female: number;
+  }>;
+
+  abstract findOldestWaitlistedByGender(
+    gender: 'male' | 'female',
+  ): Promise<Array<Pick<User, 'id'>>>;
+
+  abstract findWaitlisted(filter?: {
+    gender?: 'male' | 'female';
+  }): Promise<User[]>;
 }

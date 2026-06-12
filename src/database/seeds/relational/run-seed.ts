@@ -8,7 +8,6 @@ import { SubscriptionSeedService } from './subscription/subscription-seed.servic
 const runSeed = async () => {
   const app = await NestFactory.create(SeedModule);
 
-  // Order matters: roles and statuses first, then users, then subscriptions
   await app.get(RoleSeedService).run();
   await app.get(StatusSeedService).run();
   await app.get(UserSeedService).run();

@@ -170,4 +170,67 @@ export class UsersRelationalRepository implements UserRepository {
       data: { deletedAt: new Date() },
     });
   }
+
+  async getWaitlistPosition(
+    userId: User['id'],
+    reason: string,
+    since: Date,
+  ): Promise<number> {
+    return this.prisma.user.count({
+      where: {
+        waitlistReason: reason,
+        waitlistedAt: { lt: since },
+        deletedAt: null,
+        id: { not: Number(userId) },
+      },
+    });
+  }
+
+  async countValidatedByGender(): Promise<{ male: number; female: number }> {
+    const rows = await this.prisma.profile.groupBy({
+      by: ['gender'],
+      where: { isValidated: true },
+      _count: { _all: true },
+    });
+
+    const result = { male: 0, female: 0 };
+    for (const row of rows) {
+      if (row.gender === 'male') result.male = row._count._all;
+      else if (row.gender === 'female') result.female = row._count._all;
+    }
+    return result;
+  }
+
+  async findOldestWaitlistedByGender(
+    gender: 'male' | 'female',
+  ): Promise<Array<Pick<User, 'id'>>> {
+    const rows = await this.prisma.user.findMany({
+      where: {
+        deletedAt: null,
+        waitlistReason: { not: null },
+        waitlistedAt: { not: null },
+        profile: { is: { gender, isValidated: false } },
+      },
+      orderBy: { waitlistedAt: 'asc' },
+      select: { id: true },
+    });
+    return rows.map((row) => ({ id: row.id }));
+  }
+
+  async findWaitlisted(filter?: {
+    gender?: 'male' | 'female';
+  }): Promise<User[]> {
+    const entities = await this.prisma.user.findMany({
+      where: {
+        deletedAt: null,
+        waitlistReason: { not: null },
+        ...(filter?.gender
+          ? { profile: { is: { gender: filter.gender } } }
+          : {}),
+      },
+      orderBy: { waitlistedAt: 'asc' },
+      include: USER_INCLUDE,
+    });
+    return entities.map((e) => UserMapper.toDomain(e));
+  }
 }

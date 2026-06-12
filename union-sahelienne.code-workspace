@@ -1,0 +1,45 @@
+{
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
+  "launch": {
+    "version": "0.2.0",
+    "configurations": [],
+    "compounds": [
+      {
+        "name": "🌍 Full Stack: backend + frontend",
+        "configurations": [],
+        "preLaunchTask": "🚀 Full Stack: migrate + seed + backend + frontend",
+        "stopAll": true,
+        "presentation": {
+          "group": "fullstack",
+          "order": 1
+        }
+      },
+      {
+        "name": "🚀 Backend: migrate + seed + start",
+        "configurations": [],
+        "preLaunchTask": "backend: migrate + seed + start",
+        "stopAll": true,
+        "presentation": {
+          "group": "fullstack",
+          "order": 2
+        }
+      }
+    ]
+  },
+  "settings": {
+    "launch.target": "compound",
+    "debug.openDebug": "openOnSessionStart",
+    "debug.showInStatusBar": "onFirstSessionStart",
+    "workbench.startupEditor": "none",
+    "terminal.integrated.defaultProfile.windows": null
+  },
+  "extensions": {
+    "recommendations": [
+      "alefragnani.trigger-task-on-open"
+    ]
+  }
+}

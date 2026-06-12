@@ -49,6 +49,9 @@ model User {
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
 
+  waitlistReason String?
+  waitlistedAt   DateTime?
+
   photo   File?   @relation(fields: [photoId], references: [id])
   photoId String? @unique @db.Uuid
 
@@ -71,6 +74,7 @@ model User {
   @@index([socialId])
   @@index([firstName])
   @@index([lastName])
+  @@index([waitlistReason, waitlistedAt])
   @@map("user")
 }
 

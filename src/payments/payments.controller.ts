@@ -118,7 +118,8 @@ export class PaymentsController {
     name: 'tier',
     required: false,
     type: String,
-    description: 'lite | essentiel | trimestriel | annuel (auto-detected from amount if omitted)',
+    description:
+      'lite | essentiel | trimestriel | annuel (auto-detected from amount if omitted)',
   })
   @ApiOkResponse({ type: Payment })
   validatePayment(
@@ -126,7 +127,11 @@ export class PaymentsController {
     @Request() request,
     @Query('tier') tier?: string,
   ) {
-    return this.paymentsService.validatePayment(Number(id), request.user.id, tier);
+    return this.paymentsService.validatePayment(
+      Number(id),
+      request.user.id,
+      tier,
+    );
   }
 
   @ApiBearerAuth()

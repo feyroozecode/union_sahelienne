@@ -28,10 +28,20 @@ describe('MatchesService', () => {
       ...usersServiceOverrides,
     };
 
+    const subscriptionsService = {
+      getAvailableCredits: jest.fn().mockResolvedValue(99),
+      deductCredit: jest.fn().mockResolvedValue(undefined),
+    };
+
     return {
-      service: new MatchesService(repository as never, usersService as never),
+      service: new MatchesService(
+        repository as never,
+        usersService as never,
+        subscriptionsService as never,
+      ),
       repository,
       usersService,
+      subscriptionsService,
     };
   };
 
@@ -74,11 +84,8 @@ describe('MatchesService', () => {
     expect(usersService.findById).toHaveBeenCalledTimes(2);
   });
 
-  it('should reject new interests when the requester already has three active matches', async () => {
-    const { service } = makeService({
-      repositoryOverrides: {
-        countActiveByUserId: jest.fn().mockResolvedValue(3),
-      },
+  it('should reject new interests when the requester has no available credits', async () => {
+    const { service, subscriptionsService } = makeService({
       usersServiceOverrides: {
         findById: jest
           .fn()
@@ -92,9 +99,32 @@ describe('MatchesService', () => {
           }),
       },
     });
+    (subscriptionsService.getAvailableCredits as jest.Mock).mockResolvedValue(
+      0,
+    );
 
     await expect(service.sendInterest(1, 2)).rejects.toBeInstanceOf(
       ForbiddenException,
     );
+  });
+
+  it('should reject findCandidates for a waitlisted requester with code "waitlisted"', async () => {
+    const { service } = makeService({
+      usersServiceOverrides: {
+        findById: jest.fn().mockResolvedValue({
+          id: 1,
+          profile: { gender: 'female', isValidated: false },
+          waitlistReason: 'gender_balance',
+          waitlistedAt: new Date(),
+        }),
+      },
+    });
+
+    await expect(
+      service.findCandidates(1, { page: 1, limit: 10 }),
+    ).rejects.toMatchObject({
+      status: 403,
+      response: { error: 'waitlisted' },
+    });
   });
 });

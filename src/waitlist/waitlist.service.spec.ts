@@ -8,13 +8,11 @@ describe('WaitlistService', () => {
   } = {}) => {
     const userRepository = {
       getWaitlistPosition: jest.fn().mockResolvedValue(0),
-      update: jest
-        .fn()
-        .mockResolvedValue({
-          id: 1,
-          waitlistReason: null,
-          waitlistedAt: null,
-        }),
+      update: jest.fn().mockResolvedValue({
+        id: 1,
+        waitlistReason: null,
+        waitlistedAt: null,
+      }),
       ...userRepoOverrides,
     };
 
@@ -66,12 +64,12 @@ describe('WaitlistService', () => {
     });
     const since = new Date('2026-06-01T00:00:00Z');
 
-    await expect(
-      service.getState(7, 'gender_balance', since),
-    ).resolves.toEqual({
-      reason: 'gender_balance',
-      since,
-      position: 3,
-    });
+    await expect(service.getState(7, 'gender_balance', since)).resolves.toEqual(
+      {
+        reason: 'gender_balance',
+        since,
+        position: 3,
+      },
+    );
   });
 });

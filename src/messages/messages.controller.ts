@@ -37,7 +37,11 @@ export class MessagesController {
     @Body() dto: CreateMessageDto,
     @Request() request: { user: { id: number } },
   ) {
-    return this.messagesService.sendMessage(Number(matchId), request.user.id, dto);
+    return this.messagesService.sendMessage(
+      Number(matchId),
+      request.user.id,
+      dto,
+    );
   }
 
   @Get()
@@ -50,7 +54,10 @@ export class MessagesController {
     schema: {
       type: 'object',
       properties: {
-        messages: { type: 'array', items: { $ref: '#/components/schemas/Message' } },
+        messages: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/Message' },
+        },
         total: { type: 'number' },
       },
     },

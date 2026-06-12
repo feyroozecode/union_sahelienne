@@ -36,8 +36,17 @@ import { OtpService } from '../otp/otp.service';
 import { AuthForgotPasswordDto } from './dto/auth-forgot-password.dto';
 import { AuthResetPasswordWithOtpDto } from './dto/auth-reset-password-with-otp.dto';
 import { ProfilesService } from '../profiles/profiles.service';
+import { GenderBalanceService } from '../waitlist/gender-balance.service';
+import { WaitlistService } from '../waitlist/waitlist.service';
 
 const OTP_REQUIRED_AFTER_DAYS = 30;
+
+export interface WaitlistBlock {
+  reason: string;
+  since: string;
+  position: number;
+  genderRatio: { male: number; female: number };
+}
 
 @Injectable()
 export class AuthService {
@@ -49,6 +58,8 @@ export class AuthService {
     private readonly configService: ConfigService<AllConfigType>,
     private readonly otpService: OtpService,
     private readonly profilesService: ProfilesService,
+    private readonly genderBalanceService: GenderBalanceService,
+    private readonly waitlistService: WaitlistService,
   ) {}
 
   async validateLogin(
@@ -209,7 +220,16 @@ export class AuthService {
     return this.issueLogin(user);
   }
 
-  async register(dto: AuthRegisterLoginDto): Promise<void> {
+  async register(dto: AuthRegisterLoginDto): Promise<
+    | {
+        requiresOtp: true;
+        channel: 'email' | 'phone';
+        target: string;
+        expiresAt: number;
+        code?: string;
+      }
+    | void
+  > {
     const user = await this.usersService.create({
       email: dto.email ?? null,
       phone: dto.phone ?? null,
@@ -240,31 +260,16 @@ export class AuthService {
       });
     }
 
+    // Use OTP for both email and phone registration (replaces email link confirmation)
     if (dto.email) {
-      const hash = await this.jwtService.signAsync(
-        {
-          confirmEmailUserId: user.id,
-        },
-        {
-          secret: this.configService.getOrThrow('auth.confirmEmailSecret', {
-            infer: true,
-          }),
-          expiresIn: this.configService.getOrThrow('auth.confirmEmailExpires', {
-            infer: true,
-          }),
-        },
-      );
-
-      await this.mailService.userSignUp({
-        to: dto.email,
-        data: {
-          hash,
-        },
+      return this.otpService.sendOtp(user, {
+        purpose: 'register',
+        preferredChannel: 'email',
       });
     }
 
     if (dto.phone) {
-      await this.otpService.sendOtp(user, {
+      return this.otpService.sendOtp(user, {
         purpose: 'register',
         preferredChannel: 'phone',
       });
@@ -466,8 +471,44 @@ export class AuthService {
     await this.usersService.update(user.id, user);
   }
 
-  async me(userJwtPayload: JwtPayloadType): Promise<NullableType<User>> {
-    return this.usersService.findById(userJwtPayload.id);
+  async me(
+    userJwtPayload: JwtPayloadType,
+  ): Promise<NullableType<User & { waitlist?: WaitlistBlock }>> {
+    const user = await this.usersService.findById(userJwtPayload.id);
+    if (!user) {
+      return null;
+    }
+
+    // Lazy re-check: if this user is waitlisted, recompute the ratio and
+    // see if the waitlist has shifted enough to admit them. If so, flip
+    // them active right here in /auth/me.
+    if (user.waitlistReason && user.waitlistedAt) {
+      const autoUnblock =
+        await this.genderBalanceService.findUsersToAutoUnblock();
+      if (autoUnblock.includes(userJwtPayload.id as number)) {
+        await this.waitlistService.activate(userJwtPayload.id as number);
+        const fresh = await this.usersService.findById(userJwtPayload.id);
+        return fresh as NullableType<User & { waitlist?: WaitlistBlock }>;
+      }
+
+      const ratio = await this.genderBalanceService.getRatio();
+      const position = await this.waitlistService.getState(
+        userJwtPayload.id as number,
+        user.waitlistReason as 'gender_balance',
+        user.waitlistedAt,
+      );
+      return {
+        ...user,
+        waitlist: {
+          reason: user.waitlistReason,
+          since: user.waitlistedAt.toISOString(),
+          position: position?.position ?? 1,
+          genderRatio: ratio,
+        },
+      } as User & { waitlist?: WaitlistBlock };
+    }
+
+    return user as NullableType<User & { waitlist?: WaitlistBlock }>;
   }
 
   async update(

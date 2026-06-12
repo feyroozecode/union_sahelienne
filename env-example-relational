@@ -59,3 +59,7 @@ GOOGLE_CLIENT_SECRET=
 APPLE_APP_AUDIENCE=[]
 
 WORKER_HOST=redis://redis:6379/1
+
+# Pre-beta mode: returns OTP codes in API responses instead of sending emails/SMS
+# Set to 'true' for pre-beta testing when mobile app needs to display OTP
+PRE_BETA_MODE=false

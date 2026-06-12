@@ -57,4 +57,17 @@ export abstract class UserRepository {
     reason: string,
     since: Date,
   ): Promise<number>;
+
+  abstract countValidatedByGender(): Promise<{
+    male: number;
+    female: number;
+  }>;
+
+  abstract findOldestWaitlistedByGender(
+    gender: 'male' | 'female',
+  ): Promise<Array<Pick<User, 'id'>>>;
+
+  abstract findWaitlisted(filter?: {
+    gender?: 'male' | 'female';
+  }): Promise<User[]>;
 }

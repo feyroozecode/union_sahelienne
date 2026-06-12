@@ -32,6 +32,7 @@ import { AdminModule } from './admin/admin.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { MessagesModule } from './messages/messages.module';
 import { ReportsModule } from './reports/reports.module';
+import { WaitlistModule } from './waitlist/waitlist.module';
 
 // <database-block>
 const infrastructureDatabaseModule = (databaseConfig() as DatabaseConfig)
@@ -99,6 +100,7 @@ const infrastructureDatabaseModule = (databaseConfig() as DatabaseConfig)
     SubscriptionsModule,
     MessagesModule,
     ReportsModule,
+    WaitlistModule,
   ],
 })
 export class AppModule {}

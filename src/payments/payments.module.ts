@@ -6,6 +6,8 @@ import { FilesLocalModule } from '../files/infrastructure/uploader/local/files.m
 import { AccountValidationModule } from '../account-validation/account-validation.module';
 import { ProfilesModule } from '../profiles/profiles.module';
 import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
+import { WaitlistModule } from '../waitlist/waitlist.module';
+import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
@@ -14,6 +16,8 @@ import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
     RelationalPaymentPersistenceModule,
     ProfilesModule,
     SubscriptionsModule,
+    WaitlistModule,
+    UsersModule,
   ],
   controllers: [PaymentsController],
   providers: [PaymentsService],

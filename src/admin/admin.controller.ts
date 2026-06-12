@@ -39,20 +39,32 @@ export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
   @Get('dashboard')
-  @ApiOkResponse({ description: 'Dashboard KPIs and recent registrations chart data' })
-  getDashboard() { return this.adminService.getDashboard(); }
+  @ApiOkResponse({
+    description: 'Dashboard KPIs and recent registrations chart data',
+  })
+  getDashboard() {
+    return this.adminService.getDashboard();
+  }
 
   @Get('stats')
   @ApiOkResponse({ description: 'Platform statistics' })
-  getStats() { return this.adminService.getStats(); }
+  getStats() {
+    return this.adminService.getStats();
+  }
 
   @Get('payments/pending')
-  @ApiOkResponse({ description: 'List of pending payments awaiting admin validation' })
-  getPendingPayments() { return this.adminService.getPendingPayments(); }
+  @ApiOkResponse({
+    description: 'List of pending payments awaiting admin validation',
+  })
+  getPendingPayments() {
+    return this.adminService.getPendingPayments();
+  }
 
   @Get('payments')
   @ApiOkResponse({ description: 'List all payments' })
-  getAllPayments() { return this.adminService.getAllPayments(); }
+  getAllPayments() {
+    return this.adminService.getAllPayments();
+  }
 
   @Get('profiles')
   @ApiOkResponse({ description: 'List profiles with optional filters' })
@@ -64,15 +76,22 @@ export class AdminController {
     @Query('isComplete') isComplete?: string,
     @Query('isValidated') isValidated?: string,
   ) {
-    const filters: { isIdentityVerified?: boolean; isComplete?: boolean; isValidated?: boolean } = {};
-    if (isIdentityVerified !== undefined) filters.isIdentityVerified = isIdentityVerified === 'true';
+    const filters: {
+      isIdentityVerified?: boolean;
+      isComplete?: boolean;
+      isValidated?: boolean;
+    } = {};
+    if (isIdentityVerified !== undefined)
+      filters.isIdentityVerified = isIdentityVerified === 'true';
     if (isComplete !== undefined) filters.isComplete = isComplete === 'true';
     if (isValidated !== undefined) filters.isValidated = isValidated === 'true';
     return this.adminService.getProfiles(filters);
   }
 
   @Get('matches')
-  @ApiOkResponse({ description: 'List all matches with optional status filter' })
+  @ApiOkResponse({
+    description: 'List all matches with optional status filter',
+  })
   @ApiQuery({ name: 'status', required: false, type: String })
   getMatches(@Query('status') status?: string) {
     return this.adminService.getMatches(status ? { status } : undefined);
@@ -80,7 +99,9 @@ export class AdminController {
 
   @Get('users')
   @ApiOkResponse({ description: 'List all users with filters' })
-  getUsers(@Query() query: QueryUserDto) { return this.adminService.getUsers(query); }
+  getUsers(@Query() query: QueryUserDto) {
+    return this.adminService.getUsers(query);
+  }
 
   @Post('users')
   @ApiCreatedResponse({ description: 'Create a new admin user', type: User })
@@ -121,10 +142,36 @@ export class AdminController {
   @ApiOkResponse({ description: 'List all subscriptions' })
   @ApiQuery({ name: 'tier', required: false, type: String })
   @ApiQuery({ name: 'status', required: false, type: String })
-  getSubscriptions(@Query('tier') tier?: string, @Query('status') status?: string) {
+  getSubscriptions(
+    @Query('tier') tier?: string,
+    @Query('status') status?: string,
+  ) {
     const filters: { tier?: string; status?: string } = {};
     if (tier) filters.tier = tier;
     if (status) filters.status = status;
-    return this.adminService.getSubscriptions(Object.keys(filters).length ? filters : undefined);
+    return this.adminService.getSubscriptions(
+      Object.keys(filters).length ? filters : undefined,
+    );
+  }
+
+  @Get('waitlist')
+  @ApiOkResponse({ description: 'List waitlisted users, oldest first' })
+  @ApiQuery({
+    name: 'gender',
+    required: false,
+    type: String,
+    enum: ['male', 'female'],
+  })
+  listWaitlisted(@Query('gender') gender?: string) {
+    const filter: { gender?: 'male' | 'female' } | undefined =
+      gender === 'male' || gender === 'female' ? { gender } : undefined;
+    return this.adminService.listWaitlisted(filter);
+  }
+
+  @Post('waitlist/:userId/unblock')
+  @ApiParam({ name: 'userId', type: String, required: true })
+  @ApiOkResponse({ description: 'Force-unblock a waitlisted user' })
+  unblockWaitlisted(@Param('userId') userId: string) {
+    return this.adminService.unblockWaitlisted(Number(userId));
   }
 }

@@ -4,6 +4,189 @@
 
 ---
 
+## [2026-06-11 00:30] - Mobile Matches data layer wired to live backend API (MVP Day 2-4)
+
+> Note: mobile app lives at `/Users/a/dev/mobile/all_apps/union_sahelien`. This
+> entry is logged here because the MVP plan is tracked in this backend repo.
+
+### What changed
+- Built the full Matches data layer on the Flutter app (was presentation-only on `Future.delayed` mocks):
+  - `domain/entities/candidate_entity.dart`, `match_entity.dart` (hand-written `fromJson` to coerce backend int ids → String and flatten nested `profile`)
+  - `domain/repositories/matches_repository.dart` (port, 7 methods mapping to the 7 `/matches/*` routes)
+  - `data/datasources/matches_remote_datasource.dart` (interface), `matches_api_datasource.dart` (Dio, uses existing `ApiEndpoints.match*`), `matches_mock_datasource.dart` (dev-flavor stub)
+  - `data/repositories/matches_repository_impl.dart` (3-tier `ServerException/NetworkException/Exception` → `Failure` mapping via a DRY `_guard` helper)
+- Rewrote `matches_cubit.dart`: removed mock data; now fetches `getRequests()` + `getMyMatches()` via repository, maps `MatchEntity` → existing `MatchRequest`/`ActiveMatch`/`HistoryMatch` view-models (no UI rewrite), resolves "other user" via cached current-user id from `AuthLocalDataSource`. Actions (accept/reject/interrupt/interest) call the API then reload.
+- Added `MatchesError` state.
+- Wired Matches into DI (`injection.dart`): remote datasource (switch on `BackendConfig.type`) → repository → cubit (factory), injecting `AuthLocalDataSource`.
+- Fixed `my_matches_page.dart` to resolve `MatchesCubit` from `sl<>()` (was constructing it directly, bypassing DI).
+- Fixed a pre-existing auth blocker: removed a duplicate legacy `verifyOtp({identifier, code})` in `auth_mock_datasource.dart` that broke the override of the real `verifyOtp({email, phone, otp})`.
+
+### Why
+- Matches is the core of the Auth+Matches MVP and was the single feature with no backend connection. Auth + Matches + DI now pass `flutter analyze` with **zero errors**.
+
+### Known remaining (out of MVP scope → v1.1)
+- Non-test app errors remain in `payment` (missing `file_picker` dep) and `subscription` (missing `ApiEndpoints` getters). These are deferred features; not on the Auth+Matches path.
+- `test/` files reference an old `register({displayName})` signature — need updating before CI is green.
+
+### Files modified (mobile repo)
+- `lib/features/matches/**` — new data/domain layers + cubit rewrite
+- `lib/core/di/injection.dart` — Matches registration + imports
+- `lib/features/matches/presentation/pages/my_matches_page.dart` — DI wiring
+- `lib/features/auth/data/datasources/auth_mock_datasource.dart` — removed duplicate verifyOtp
+
+## [2026-06-10 21:15] - Fix broken backend build (3 type errors + relocated admin)
+
+### What changed
+- Implemented the 3 waitlist gender-balance methods on the document (Mongoose) adapter as loud throw-stubs (`countValidatedByGender`, `findOldestWaitlistedByGender`, `findWaitlisted`) — satisfies the `UserRepository` port without modeling gender/validation in the document schema.
+- Fixed `admin.controller.ts` `listWaitlisted` — typed the narrowed filter explicitly as `{ gender?: 'male' | 'female' } | undefined`.
+- Fixed relational `findOldestWaitlistedByGender` Prisma filter — moved `gender` inside the `is` relation wrapper (`profile: { is: { gender, isValidated: false } }`).
+- Added `frontend` to the exclude list in `tsconfig.build.json` (the admin app was renamed `admin/` → `frontend/` but the build exclude still said `admin`, so Next.js TSX was being compiled by `nest build`).
+- Added `exclude: [node_modules, dist, frontend]` to base `tsconfig.json` for editor/typecheck consistency.
+
+### Why
+- `npm run build` was failing entirely. Decision: this is a PostgreSQL-only MVP, so the document persistence path is dead weight — stubbing it (vs. building a Mongo schema) is the correct, honest fix. Backend now compiles green (exit 0, 0 TS errors, emits `dist/src/main.js`).
+
+### Files modified
+- `src/users/infrastructure/persistence/document/repositories/user.repository.ts` — added 3 throw-stub methods
+- `src/admin/admin.controller.ts` — explicit filter type
+- `src/users/infrastructure/persistence/relational/repositories/user.repository.ts` — Prisma `is` wrapper fix
+- `tsconfig.build.json` — exclude `frontend`
+- `tsconfig.json` — add exclude array
+
+### Known follow-up (not fixed, out of scope)
+- `package.json` `start:prod` points to `dist/main` but nest emits to `dist/src/main` (sourceRoot=src). Pre-existing path mismatch.
+
+## [2026-06-08 14:00] - VS Code workspace file for one-click full stack launch
+
+### What changed
+- Created `union-sahelienne.code-workspace` with launch compounds that start backend + frontend in parallel dedicated terminals
+- Moved compound launch configs from `.vscode/launch.json` to the workspace file to avoid duplication
+- Fixed frontend dev server task's `problemMatcher` (was empty array, now has proper `endsPattern` for Next.js `- Local:` output)
+- Added `trigger-task-on-open` extension recommendation for optional auto-trigger on folder open
+
+### Why
+- Developer experience: open project → Run view → one click → two terminals (NestJS + Next.js) start in parallel
+
+### Files modified
+- `union-sahelienne.code-workspace` — new workspace file with launch compounds and settings
+- `.vscode/launch.json` — removed compounds (moved to workspace file)
+- `.vscode/tasks.json` — fixed frontend problemMatcher for background task detection
+
+## [2026-06-06 12:35] - Staging/prod base URL wiring + CORS allowlist
+
+### What changed
+- `mobile/.env.staging`, `mobile/.env.prod` — Set `API_BASE_URL=https://api-unionsahel.alfajarsoft.com/api/v1`, added `WEB_BASE_URL=https://admin-unionsahel.alfajarsoft.com`
+- `mobile/.env.dev` — Aligned with the backend dev port (`http://localhost:3020/api/v1`), added `WEB_BASE_URL=http://localhost:3022`
+- `mobile/lib/config/env/env.dart` — Added `webBaseUrl` to the `Env` interface
+- `mobile/lib/config/env/dev_env.dart`, `staging_env.dart`, `prod_env.dart` — Implemented `webBaseUrl` per flavor with the right default URL
+- `mobile/lib/app/flavor_config.dart` — Exposed `webBaseUrl` on `FlavorConfig` (reads from `WEB_BASE_URL` env at compile time)
+- `admin/.env.development`, `admin/.env.staging`, `admin/.env.production` — New env files, one per Next.js build mode
+- `admin/.env.example` — Template committed (and force-included in `.gitignore`)
+- `admin/lib/api.ts:1-9` — `API_BASE_URL` now reads `process.env.NEXT_PUBLIC_API_URL` with a localhost fallback + a clear error if neither is set
+- `admin/.gitignore` — `!.env.example` exception so the template is tracked
+- `src/config/app-config.type.ts`, `src/config/app.config.ts` — Added `adminDomain` field driven by `ADMIN_DOMAIN`
+- `src/main.ts:17-50` — Replaced `{ cors: true }` with an explicit allowlist (`frontendDomain` + `adminDomain` + local dev ports), credentials enabled, `X-Sensitive-Data` allowed
+- `.env.staging`, `.env.production` — New env templates for staging/prod (DB, AWS, SES, Wave, JWT — all `__FILL_*__` placeholders)
+- `.gitignore` — Ignores `.env.staging`, `.env.production`, `.env.*.local`
+
+### Why
+- The mobile app was hardcoded to `localhost:3000` (wrong port) and the staging/prod env files had `api-unionsahel.alfajarsoft.com` without protocol/path → dio would throw on first call
+- The admin panel had no env file at all and the API URL was a hardcoded constant → no way to point a deployed build at the real API
+- The backend had no CORS allowlist → once the admin panel is deployed on `admin-unionsahel.alfajarsoft.com` and a Flutter app calls from a real device, every request would be rejected by the browser
+- The `.env` secrets file contained placeholder `secret`/`secret_for_*` values; staging/prod env templates force per-env secret rotation before deploy
+
+### Files modified
+- `mobile/.env.dev`, `mobile/.env.staging`, `mobile/.env.prod`
+- `mobile/lib/config/env/env.dart`
+- `mobile/lib/config/env/dev_env.dart`, `staging_env.dart`, `prod_env.dart`
+- `mobile/lib/app/flavor_config.dart`
+- `admin/.env.development`, `admin/.env.staging`, `admin/.env.production`, `admin/.env.example`
+- `admin/.gitignore`
+- `admin/lib/api.ts`
+- `src/config/app-config.type.ts`, `src/config/app.config.ts`
+- `src/main.ts`
+- `.env.staging`, `.env.production`
+- `.gitignore`
+
+---
+## [2026-06-06 13:10] - Waitlist / Gender Balance feature (end-to-end)
+
+### What changed
+- `src/waitlist/gender-balance.service.ts` + `.spec.ts` — Pure rule engine with 11 unit tests: `wouldExceedThreshold` and `findUsersToAutoUnblock` walking the oldest minorities, capped at 75%
+- `src/waitlist/waitlist.module.ts` — DI module that exports `WaitlistService` and `GenderBalanceService`
+- `src/waitlist/waitlist.service.ts` — Public `getRatio()` so callers don't need to touch the private repo
+- `src/app.module.ts` — Registered `WaitlistModule`
+- `src/users/infrastructure/persistence/user.repository.ts` — Added `countValidatedByGender`, `findOldestWaitlistedByGender`, `findWaitlisted`
+- `src/users/infrastructure/persistence/relational/repositories/user.repository.ts` — Implemented all three with `prisma.profile.groupBy` + ordered `findMany`
+- `src/payments/payments.service.ts` — After `syncProfileValidationState` + subscription creation, branches on `wouldExceedThreshold(profile.gender)`: under threshold → `activate()`; over → `waitlist()` + `isValidated: false`
+- `src/payments/payments.module.ts` — Imports `WaitlistModule` + `UsersModule` (for `getMyPaymentStatus` enrichment)
+- `src/payments/payments.service.spec.ts` — 2 new specs covering the under/over branches
+- `src/auth/auth.service.ts` — `me()` now adds a `waitlist: { reason, since, position, genderRatio }` block when the user is waitlisted, and runs lazy auto-unblock via `findUsersToAutoUnblock()` on every call
+- `src/auth/auth.module.ts` — Imports `WaitlistModule`
+- `src/auth/auth.service.spec.ts` — Constructor updated to 9 args (added `GenderBalanceService` + `WaitlistService` mocks)
+- `src/admin/admin.service.ts` — Added `listWaitlisted({ gender })` and `unblockWaitlisted(userId)` (404 on missing user, 409 if not waitlisted)
+- `src/admin/admin.controller.ts` — `GET /admin/waitlist?gender=` and `POST /admin/waitlist/:userId/unblock`
+- `src/admin/admin.module.ts` — Imports `WaitlistModule`
+- `src/matches/matches.service.ts` — `getValidatedUserWithProfile` 403s with `{ error: 'waitlisted' }` (distinct from `validatedProfileRequired`) when the requester has a `waitlistReason`
+- `src/matches/matches.service.spec.ts` — New test asserting the distinct 403 code
+- `src/database/seeds/relational/user/user-seed.service.ts` — Two new personas (`mariam.w@test.com`, `souleymane.w@test.com`) seeded as waitlisted at 5d and 1d respectively
+
+### Mobile (Flutter, `/Users/a/dev/mobile/all_apps/union_sahelien`)
+- `lib/features/auth/data/models/user_model.dart` — Added `waitlist: WaitlistBlock?` (with `GenderRatio`); regenerated freezed/json
+- `lib/features/auth/domain/entities/user_entity.dart` — Added `WaitlistInfo` and exposed `waitlist` on `UserEntity`
+- `lib/features/waitlist/domain/waitlist_cubit.dart` — 60s polling cubit; emits `WaitlistInitial` / `WaitlistWaiting(info)` / `WaitlistUnblocked`
+- `lib/features/waitlist/domain/waitlist_state.dart` — sealed `WaitlistStatus` with 3 concrete classes
+- `lib/features/waitlist/presentation/pages/waitlist_page.dart` — Wired the cubit; shows live `Position #N · malePct% / femalePct%`; auto-redirects to `/home` on unblock; logout button calls `authRepository.logout()`
+- `lib/core/di/injection.dart` — `WaitlistCubit` factory registered; `AuthGuard` now receives `AuthRepository`
+- `lib/core/router/guards/auth_guard.dart` — On every navigation: authenticated users with a `waitlist` block get redirected to `/waitlist`; `/home` is no longer reachable for them
+- `lib/core/error/exceptions.dart` — New `WaitlistException`
+- `lib/core/network/interceptors/error_interceptor.dart` — 403 with `error: 'waitlisted'` body throws `WaitlistException`; downstream callers can match on type
+
+### Admin (Next.js, `/Users/a/dev/web/solutions/union_sahelienne/admin`)
+- `lib/types.ts` — `AdminWaitlistUser` interface
+- `lib/waitlist.ts` — `listWaitlisted(gender?)` + `unblockWaitlisted(userId)` API client
+- `app/(dashboard)/waitlist/page.tsx` + `page.module.css` — Table with `Hourglass`/`Unlock`/`Filter`/`RefreshCw` icons, gender filter, 3-stat row, per-row unblock with confirm
+- `components/Sidebar.tsx` — Added `Waitlist` nav item between Users and Admins
+
+### Why
+- Closes the 75/25 gender-balance rule from `plans/epic_10_05_26.txt:132` end-to-end: backend enforcement + admin visibility + mobile UX
+- Lazy auto-unblock on `/auth/me` means a user stuck in the waitlist only needs to keep the app open — once the ratio shifts, they get unblocked without an admin action
+- The `error: 'waitlisted'` 403 from `/matches/candidates` is the canonical signal the mobile uses to redirect to the Waitlist Screen
+- Seed data lets the admin demo the page immediately after `npm run seed:run:relational` without manually setting up 76/24 ratios
+
+### Files modified
+- `src/waitlist/gender-balance.service.ts`, `.spec.ts`
+- `src/waitlist/waitlist.module.ts`
+- `src/waitlist/waitlist.service.ts` (added public `getRatio`)
+- `src/app.module.ts`
+- `src/users/infrastructure/persistence/user.repository.ts`
+- `src/users/infrastructure/persistence/relational/repositories/user.repository.ts`
+- `src/payments/payments.service.ts`, `payments.service.spec.ts`, `payments.module.ts`
+- `src/auth/auth.service.ts`, `auth.service.spec.ts`, `auth.module.ts`
+- `src/admin/admin.service.ts`, `admin.controller.ts`, `admin.module.ts`
+- `src/matches/matches.service.ts`, `matches.service.spec.ts`
+- `src/database/seeds/relational/user/user-seed.service.ts`
+- `mobile/lib/features/auth/data/models/user_model.dart` (+ generated)
+- `mobile/lib/features/auth/domain/entities/user_entity.dart` (+ generated)
+- `mobile/lib/features/waitlist/domain/waitlist_cubit.dart`
+- `mobile/lib/features/waitlist/domain/waitlist_state.dart`
+- `mobile/lib/features/waitlist/presentation/pages/waitlist_page.dart`
+- `mobile/lib/core/di/injection.dart`
+- `mobile/lib/core/router/guards/auth_guard.dart`
+- `mobile/lib/core/error/exceptions.dart`
+- `mobile/lib/core/network/interceptors/error_interceptor.dart`
+- `admin/lib/types.ts`
+- `admin/lib/waitlist.ts`
+- `admin/app/(dashboard)/waitlist/page.tsx`, `page.module.css`
+- `admin/components/Sidebar.tsx`
+
+### Test summary
+- Backend `npx jest`: **24/24 passing** (6 suites)
+- Backend `npm run lint`: 8 pre-existing `it`/`should` warnings in the original `waitlist.service.spec.ts` (unrelated); all new files clean
+- Mobile `flutter analyze --no-pub`: all new waitlist/error_interceptor/auth_guard files clean; remaining 53 errors are pre-existing in `test/` and other unrelated files
+- Admin `npx tsc --noEmit` + `npm run lint`: clean
+
+---
 ## [2026-05-10 15:05] - R3-S1: Subscription tiers, Chat messaging, Reports
 
 ### What changed

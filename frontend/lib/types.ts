@@ -108,3 +108,17 @@ export interface AdminPayment {
   status: string;
   createdAt: string;
 }
+
+export interface AdminWaitlistUser {
+  id: number;
+  email: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  waitlistReason: string | null;
+  waitlistedAt: string | null;
+  position: number | null;
+  profile: {
+    gender: string;
+    isValidated: boolean;
+  } | null;
+}

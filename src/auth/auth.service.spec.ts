@@ -20,6 +20,8 @@ describe('AuthService', () => {
       {} as never,
       {} as never,
       {} as never,
+      {} as never,
+      {} as never,
     );
 
     return { service, usersService };

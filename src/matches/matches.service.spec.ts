@@ -99,10 +99,32 @@ describe('MatchesService', () => {
           }),
       },
     });
-    (subscriptionsService.getAvailableCredits as jest.Mock).mockResolvedValue(0);
+    (subscriptionsService.getAvailableCredits as jest.Mock).mockResolvedValue(
+      0,
+    );
 
     await expect(service.sendInterest(1, 2)).rejects.toBeInstanceOf(
       ForbiddenException,
     );
+  });
+
+  it('should reject findCandidates for a waitlisted requester with code "waitlisted"', async () => {
+    const { service } = makeService({
+      usersServiceOverrides: {
+        findById: jest.fn().mockResolvedValue({
+          id: 1,
+          profile: { gender: 'female', isValidated: false },
+          waitlistReason: 'gender_balance',
+          waitlistedAt: new Date(),
+        }),
+      },
+    });
+
+    await expect(
+      service.findCandidates(1, { page: 1, limit: 10 }),
+    ).rejects.toMatchObject({
+      status: 403,
+      response: { error: 'waitlisted' },
+    });
   });
 });

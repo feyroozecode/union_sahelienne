@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { PaymentRepository } from '../payments/infrastructure/persistence/payment.repository';
 import { ProfileRepository } from '../profiles/infrastructure/persistence/profile.repository';
@@ -10,8 +15,13 @@ import { ReportsService } from '../reports/reports.service';
 import { SubscriptionRepository } from '../subscriptions/infrastructure/persistence/subscription.repository';
 import { StatusEnum } from '../statuses/statuses.enum';
 import { CreateAdminDto } from './dto/create-admin.dto';
+import { WaitlistService } from '../waitlist/waitlist.service';
+import { UserRepository } from '../users/infrastructure/persistence/user.repository';
 
-type AdminProfileUserSummary = Pick<User, 'id' | 'firstName' | 'lastName' | 'email'>;
+type AdminProfileUserSummary = Pick<
+  User,
+  'id' | 'firstName' | 'lastName' | 'email'
+>;
 
 @Injectable()
 export class AdminService {
@@ -23,6 +33,8 @@ export class AdminService {
     private readonly prisma: PrismaService,
     private readonly reportsService: ReportsService,
     private readonly subscriptionRepository: SubscriptionRepository,
+    private readonly waitlistService: WaitlistService,
+    private readonly userRepository: UserRepository,
   ) {}
 
   async getDashboard() {
@@ -71,7 +83,13 @@ export class AdminService {
         take: 5,
       }),
       this.prisma.match.findMany({
-        select: { id: true, status: true, createdAt: true, requesterId: true, targetId: true },
+        select: {
+          id: true,
+          status: true,
+          createdAt: true,
+          requesterId: true,
+          targetId: true,
+        },
         orderBy: { createdAt: 'desc' },
         take: 5,
       }),
@@ -81,7 +99,14 @@ export class AdminService {
         take: 5,
       }),
       this.prisma.payment.findMany({
-        select: { id: true, amount: true, type: true, status: true, createdAt: true, userId: true },
+        select: {
+          id: true,
+          amount: true,
+          type: true,
+          status: true,
+          createdAt: true,
+          userId: true,
+        },
         orderBy: { createdAt: 'desc' },
         take: 5,
       }),
@@ -106,7 +131,8 @@ export class AdminService {
       })),
       recentUsers: recentUsers.map((user) => ({
         id: user.id,
-        name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+        name:
+          `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
         email: user.email,
       })),
       recentMatches: recentMatches.map((match) => ({
@@ -135,8 +161,12 @@ export class AdminService {
     return { pendingPaymentsCount: pendingPayments.length };
   }
 
-  getPendingPayments() { return this.paymentRepository.findPending(); }
-  getAllPayments() { return this.paymentRepository.findAll(); }
+  getPendingPayments() {
+    return this.paymentRepository.findPending();
+  }
+  getAllPayments() {
+    return this.paymentRepository.findAll();
+  }
 
   async getProfiles(filters?: {
     isIdentityVerified?: boolean;
@@ -146,15 +176,30 @@ export class AdminService {
     const profiles = await this.profileRepository.findAll(filters);
     if (!profiles.length) return [];
 
-    const users = await this.usersService.findByIds(profiles.map((p) => p.userId));
+    const users = await this.usersService.findByIds(
+      profiles.map((p) => p.userId),
+    );
     const usersById = new Map<number, AdminProfileUserSummary>(
-      users.map((user) => [Number(user.id), { id: user.id, firstName: user.firstName, lastName: user.lastName, email: user.email }]),
+      users.map((user) => [
+        Number(user.id),
+        {
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+        },
+      ]),
     );
 
-    return profiles.map((profile) => ({ ...profile, user: usersById.get(profile.userId) ?? null }));
+    return profiles.map((profile) => ({
+      ...profile,
+      user: usersById.get(profile.userId) ?? null,
+    }));
   }
 
-  getMatches(filters?: { status?: string }) { return this.matchRepository.findAll(filters); }
+  getMatches(filters?: { status?: string }) {
+    return this.matchRepository.findAll(filters);
+  }
 
   getUsers(query: QueryUserDto) {
     const page = query?.page ?? 1;
@@ -180,12 +225,71 @@ export class AdminService {
 
   async verifyIdentity(profileId: number) {
     const profile = await this.profileRepository.findById(profileId);
-    if (!profile) throw new NotFoundException({ status: 404, error: 'profileNotFound' });
-    return this.profileRepository.update(profileId, { isIdentityVerified: true });
+    if (!profile)
+      throw new NotFoundException({ status: 404, error: 'profileNotFound' });
+    return this.profileRepository.update(profileId, {
+      isIdentityVerified: true,
+    });
   }
 
-  getReports(filters?: { status?: string }) { return this.reportsService.findAll(filters); }
-  reviewReport(id: number, adminUserId: number) { return this.reportsService.reviewReport(id, adminUserId); }
-  dismissReport(id: number, adminUserId: number) { return this.reportsService.dismissReport(id, adminUserId); }
-  getSubscriptions(filters?: { tier?: string; status?: string }) { return this.subscriptionRepository.findAll(filters); }
+  getReports(filters?: { status?: string }) {
+    return this.reportsService.findAll(filters);
+  }
+  reviewReport(id: number, adminUserId: number) {
+    return this.reportsService.reviewReport(id, adminUserId);
+  }
+  dismissReport(id: number, adminUserId: number) {
+    return this.reportsService.dismissReport(id, adminUserId);
+  }
+  getSubscriptions(filters?: { tier?: string; status?: string }) {
+    return this.subscriptionRepository.findAll(filters);
+  }
+
+  async listWaitlisted(filter?: { gender?: 'male' | 'female' }) {
+    const users = await this.userRepository.findWaitlisted(filter);
+    return Promise.all(
+      users.map(async (user) => {
+        const state =
+          user.waitlistReason && user.waitlistedAt
+            ? await this.waitlistService.getState(
+                user.id as number,
+                user.waitlistReason as 'gender_balance',
+                user.waitlistedAt,
+              )
+            : null;
+        return {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          waitlistReason: user.waitlistReason,
+          waitlistedAt: user.waitlistedAt,
+          position: state?.position ?? null,
+          profile: user.profile
+            ? {
+                gender: user.profile.gender,
+                isValidated: user.profile.isValidated,
+              }
+            : null,
+        };
+      }),
+    );
+  }
+
+  async unblockWaitlisted(userId: number) {
+    const user = await this.userRepository.findById(userId);
+    if (!user) {
+      throw new NotFoundException({ status: 404, error: 'userNotFound' });
+    }
+    if (!user.waitlistReason) {
+      throw new ConflictException({ status: 409, error: 'userNotWaitlisted' });
+    }
+
+    const profile = await this.profileRepository.findByUserId(userId);
+    if (profile) {
+      await this.profileRepository.update(profile.id, { isValidated: true });
+    }
+    await this.waitlistService.activate(userId);
+    return { success: true, userId };
+  }
 }

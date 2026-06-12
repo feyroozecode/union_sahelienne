@@ -17,6 +17,7 @@ import {
   Settings,
   Bell,
   ChevronRight,
+  Hourglass,
 } from 'lucide-react';
 import styles from './Sidebar.module.css';
 
@@ -26,6 +27,7 @@ const navItems = [
   { href: '/matches', label: 'Matches', icon: Link2 },
   { href: '/payments', label: 'Payments', icon: CreditCard },
   { href: '/users', label: 'Users', icon: Users },
+  { href: '/waitlist', label: 'Waitlist', icon: Hourglass },
   { href: '/admins', label: 'Admins', icon: ShieldCheck },
   { href: '/config', label: 'App Config', icon: Settings },
 ];

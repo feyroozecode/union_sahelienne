@@ -5,7 +5,10 @@ import { RelationalMessagePersistenceModule } from './infrastructure/persistence
 import { RelationalMatchPersistenceModule } from '../matches/infrastructure/persistence/relational/relational-persistence.module';
 
 @Module({
-  imports: [RelationalMessagePersistenceModule, RelationalMatchPersistenceModule],
+  imports: [
+    RelationalMessagePersistenceModule,
+    RelationalMatchPersistenceModule,
+  ],
   controllers: [MessagesController],
   providers: [MessagesService],
   exports: [MessagesService],

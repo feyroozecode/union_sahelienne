@@ -220,16 +220,13 @@ export class AuthService {
     return this.issueLogin(user);
   }
 
-  async register(dto: AuthRegisterLoginDto): Promise<
-    | {
-        requiresOtp: true;
-        channel: 'email' | 'phone';
-        target: string;
-        expiresAt: number;
-        code?: string;
-      }
-    | void
-  > {
+  async register(dto: AuthRegisterLoginDto): Promise<{
+    requiresOtp: true;
+    channel: 'email' | 'phone';
+    target: string;
+    expiresAt: number;
+    code?: string;
+  } | void> {
     const user = await this.usersService.create({
       email: dto.email ?? null,
       phone: dto.phone ?? null,

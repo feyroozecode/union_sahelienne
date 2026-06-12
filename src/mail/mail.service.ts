@@ -17,16 +17,31 @@ export class MailService {
   ) {}
 
   private async resolveTemplatePath(templateName: string): Promise<string> {
-    const workingDirectory = this.configService.getOrThrow('app.workingDirectory', {
-      infer: true,
-    });
+    const workingDirectory = this.configService.getOrThrow(
+      'app.workingDirectory',
+      {
+        infer: true,
+      },
+    );
 
     // Try multiple paths in order of preference
     const possiblePaths = [
       // Development path (src)
-      path.join(workingDirectory, 'src', 'mail', 'mail-templates', templateName),
+      path.join(
+        workingDirectory,
+        'src',
+        'mail',
+        'mail-templates',
+        templateName,
+      ),
       // Production path (dist)
-      path.join(workingDirectory, 'dist', 'mail', 'mail-templates', templateName),
+      path.join(
+        workingDirectory,
+        'dist',
+        'mail',
+        'mail-templates',
+        templateName,
+      ),
       // Alternative production path (same directory as dist)
       path.join(workingDirectory, 'mail', 'mail-templates', templateName),
     ];

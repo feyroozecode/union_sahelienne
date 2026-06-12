@@ -175,9 +175,7 @@ export class UsersDocumentRepository implements UserRepository {
     );
   }
 
-  findWaitlisted(_filter?: {
-    gender?: 'male' | 'female';
-  }): Promise<User[]> {
+  findWaitlisted(_filter?: { gender?: 'male' | 'female' }): Promise<User[]> {
     throw new Error('findWaitlisted is not supported for document persistence');
   }
 }

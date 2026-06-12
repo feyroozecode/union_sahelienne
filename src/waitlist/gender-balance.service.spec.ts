@@ -40,9 +40,7 @@ describe('GenderBalanceService', () => {
 
     it('should apply to either gender symmetrically', async () => {
       const { service } = make({ ratio: { male: 20, female: 80 } });
-      await expect(
-        service.wouldExceedThreshold('female'),
-      ).resolves.toBe(true);
+      await expect(service.wouldExceedThreshold('female')).resolves.toBe(true);
       await expect(service.wouldExceedThreshold('male')).resolves.toBe(false);
     });
 

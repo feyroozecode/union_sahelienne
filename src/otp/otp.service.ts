@@ -50,7 +50,9 @@ export class OtpService {
     const code = crypto.randomInt(100000, 1000000).toString();
     const expiry = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
     const otpHash = await bcrypt.hash(code, await bcrypt.genSalt());
-    const isPreBetaMode = this.configService.get('app.preBetaMode', { infer: true });
+    const isPreBetaMode = this.configService.get('app.preBetaMode', {
+      infer: true,
+    });
 
     await this.usersService.updateAuthState(user.id, {
       otpHash,

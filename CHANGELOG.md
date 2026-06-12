@@ -4,6 +4,43 @@
 
 ---
 
+## [2026-06-12 08:45] - Pre-beta OTP mode + fix mail template path errors
+
+### What changed
+- Added `PRE_BETA_MODE` environment variable (`src/config/app.config.ts`, `src/config/app-config.type.ts`)
+  - When enabled, OTP codes are returned in API responses instead of being sent via email/SMS
+  - Allows mobile app to display OTP directly during pre-beta testing
+- Modified `OtpChallengeResponseDto` to include optional `code` field for pre-beta mode
+- Updated `OtpService.sendOtp()` to skip email/SMS sending and return code in pre-beta mode
+- Changed `AuthService.register()` to use OTP for email verification (instead of email link confirmation)
+  - Returns `OtpChallengeResponseDto` for both email and phone registration
+  - Fixes production error where email templates were not found
+- Fixed mail template path resolution in `MailService`:
+  - Added `resolveTemplatePath()` helper that tries multiple paths (src, dist, mail/)
+  - Templates now work in both development and production (Docker) environments
+- Updated `nest-cli.json` to copy mail templates to dist folder during build
+- Added `PRE_BETA_MODE` to both `env-example-relational` and `env-example-document`
+
+### Why
+- Production was failing with `ENOENT: no such file or directory, open '/app/src/mail/mail-templates/activation.hbs'`
+- The Docker container only copies `dist/` to production, not `src/`
+- Mobile app is in pre-beta testing and needs to display OTP codes directly
+- Simplifies testing flow by avoiding email/SMS dependencies during beta
+
+### Files modified
+- `src/config/app.config.ts` — added PRE_BETA_MODE config
+- `src/config/app-config.type.ts` — added preBetaMode to AppConfig type
+- `src/auth/dto/otp-challenge-response.dto.ts` — added optional code field
+- `src/otp/otp.service.ts` — skip sending and return code in pre-beta mode
+- `src/auth/auth.service.ts` — use OTP for email registration
+- `src/auth/auth.controller.ts` — updated register endpoint to return OtpChallengeResponseDto
+- `src/mail/mail.service.ts` — added resolveTemplatePath() for multi-path template resolution
+- `nest-cli.json` — added mail-templates to compiler assets
+- `env-example-relational` — added PRE_BETA_MODE documentation
+- `env-example-document` — added PRE_BETA_MODE documentation
+
+---
+
 ## [2026-06-11 00:30] - Mobile Matches data layer wired to live backend API (MVP Day 2-4)
 
 > Note: mobile app lives at `/Users/a/dev/mobile/all_apps/union_sahelien`. This

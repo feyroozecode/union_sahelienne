@@ -1,0 +1,59 @@
+services:
+  postgres:
+    image: postgres:17.6-alpine
+    container_name: us-postgres
+    restart: always
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME} -d ${DATABASE_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: us-api
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DATABASE_HOST: postgres
+      DATABASE_URL: postgresql://${DATABASE_USERNAME}:${DATABASE_PASSWORD}@postgres:5432/${DATABASE_NAME}
+      NODE_ENV: production
+    # Published on loopback only; the host nginx (api-unionsahel.alfajarsoft.com)
+    # terminates TLS and proxies to this port. APP_PORT=3002 (see .env).
+    ports:
+      - "127.0.0.1:3002:3002"
+
+  admin:
+    build:
+      context: ./admin
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api-unionsahel.alfajarsoft.com/api/v1}
+    container_name: us-admin
+    restart: always
+    depends_on:
+      - api
+    env_file: .env
+    # Published on loopback only; the host nginx (union-sahel.alfajarsoft.com)
+    # terminates TLS and proxies to this port. Next.js listens on 3022.
+    ports:
+      - "127.0.0.1:3023:3022"
+
+# TLS termination and reverse proxying are handled by the HOST nginx
+# (/etc/nginx/sites-available/{union-sahel,api-unionsahel}.alfajarsoft.com),
+# mirroring the mytaxi setup. The previous bundled nginx + certbot services
+# were removed because they bound host ports 80/443 and conflicted with it.
+
+volumes:
+  pgdata:

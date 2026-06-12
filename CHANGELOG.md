@@ -4,6 +4,74 @@
 
 ---
 
+## [2026-06-06 10:30] - Add seed-on-deploy to production script
+
+### What changed
+- `deploy.sh` — Added step 8: checks if admin user exists in DB via PrismaClient; if not, runs the compiled seed script before starting all services
+
+### Why
+- Fresh deployments were not automatically seeded, requiring manual intervention
+- Seed is idempotent and skipped when admin user already exists
+
+### Files modified
+- deploy.sh — Added seed check + run between migrations and service start
+
+## [2026-06-06 09:00] - Fix production Docker deployment bugs
+
+### What changed
+- `docker-compose.prod.yml` — Restructured certbot/nginx volumes: both now share `./certbot/conf` mapped to `/etc/letsencrypt` (was mismatched: nginx used `./nginx/ssl:/etc/nginx/ssl` while certbot wrote to `./nginx/ssl:/etc/letsencrypt`, causing cert renewal to never update nginx)
+- `nginx/nginx.conf` — Changed `ssl_certificate`/`ssl_certificate_key` from `/etc/nginx/ssl/fullchain.pem` to `/etc/letsencrypt/live/api-unionsahel.alfajarsoft.com/fullchain.pem` (standard certbot output path); both API and admin server blocks now reference the same SAN cert
+- `deploy.sh` — Source `.env` before `pg_isready` (was using unset shell vars, would silently pass empty strings)
+- `deploy.sh` — Health check now runs `docker compose exec api node -e 'http.get(...)'` internally instead of `curl http://localhost:3000` (API container doesn't expose port 3000 to host)
+- `deploy.sh` — Removed `NGINX_SSL_DIR` variable; replaced with `mkdir -p ./certbot/conf ./certbot/www`
+- `Dockerfile.prod` — Added `curl` to production stage for debugging and health checks
+- `admin/.dockerignore` — New file excludes `node_modules`, `.next`, `.git`, `.env` from Docker build context
+
+### Why
+- Certbot auto-renewal was broken: renewed certs were written to a different host path than nginx was reading
+- `deploy.sh` would hang on `pg_isready` with empty credentials
+- Health check always failed because port 3000 is not exposed to the host (only nginx ports 80/443 are)
+- Admin Docker builds were slow/unreliable without a `.dockerignore` in the admin context
+
+### Files modified
+- `docker-compose.prod.yml` — Fixed certbot/nginx volume mounts; removed unused `certbot-data` named volume
+- `nginx/nginx.conf` — Updated SSL cert paths to standard certbot location
+- `deploy.sh` — Source .env, fixed health check, removed NGINX_SSL_DIR, updated mkdir
+- `Dockerfile.prod` — Added curl
+- `admin/.dockerignore` — Created
+
+---
+
+## [2026-06-05 12:00] - Production Docker deployment setup
+
+### What changed
+- `Dockerfile.prod` — New multi-stage production build for NestJS API (build stage + slim production stage)
+- `admin/Dockerfile` — New production Dockerfile for Next.js admin frontend with standalone output
+- `admin/next.config.ts` — Added `output: 'standalone'` for optimized Docker builds
+- `docker-compose.prod.yml` — Production orchestration: postgres, api, admin, nginx, certbot
+- `nginx/nginx.conf` — Reverse proxy config with TLS termination, HTTP→HTTPS redirect, Let's Encrypt support
+- `deploy.sh` — One-command VPS deployment script (git pull, build, migrate, roll out)
+- `.env.prod.example` — Production environment variable reference with strong secret placeholders
+- `.dockerignore` — Extended to exclude admin/node_modules, .git, test, docs from build context
+- `startup.relational.dev.sh` — Fixed `migration:run` → `prisma:migrate:deploy` (broken command)
+
+### Why
+- Enable deployment of the full stack (API + admin + DB + reverse proxy) on a VPS with proper TLS
+- Reduce backend Docker image size from ~1.2GB to ~200MB via multi-stage build
+- Containerize the admin frontend (previously only ran via dev server)
+- Automate deployment with a single reproducible script
+
+### Files modified
+- `Dockerfile.prod` — created
+- `admin/Dockerfile` — created
+- `admin/next.config.ts` — added standalone output
+- `docker-compose.prod.yml` — created
+- `nginx/nginx.conf` — created
+- `deploy.sh` — created
+- `.env.prod.example` — created
+- `.dockerignore` — expanded exclusions
+- `startup.relational.dev.sh` — fixed migration command
+
 ## [2026-05-10 15:05] - R3-S1: Subscription tiers, Chat messaging, Reports
 
 ### What changed

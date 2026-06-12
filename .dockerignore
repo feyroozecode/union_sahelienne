@@ -2,3 +2,15 @@
 /.data
 /dist
 /files
+/.git
+/.github
+/.vscode
+/.hygen
+/.install-scripts
+/test
+/docs
+/coverage
+/admin/node_modules
+/admin/.next
+/changelog
+/plans

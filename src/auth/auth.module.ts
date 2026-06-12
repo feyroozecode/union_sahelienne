@@ -11,6 +11,7 @@ import { SessionModule } from '../session/session.module';
 import { UsersModule } from '../users/users.module';
 import { OtpModule } from '../otp/otp.module';
 import { ProfilesModule } from '../profiles/profiles.module';
+import { WaitlistModule } from '../waitlist/waitlist.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { ProfilesModule } from '../profiles/profiles.module';
     PassportModule,
     MailModule,
     OtpModule,
+    WaitlistModule,
     JwtModule.register({}),
   ],
   controllers: [AuthController],

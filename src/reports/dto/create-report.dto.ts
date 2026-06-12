@@ -13,7 +13,10 @@ export class CreateReportDto {
   @IsEnum(ReportType)
   type: ReportType;
 
-  @ApiPropertyOptional({ example: 'Cette personne demande de l\'argent...', maxLength: 1000 })
+  @ApiPropertyOptional({
+    example: "Cette personne demande de l'argent...",
+    maxLength: 1000,
+  })
   @IsOptional()
   @IsString()
   @MaxLength(1000)

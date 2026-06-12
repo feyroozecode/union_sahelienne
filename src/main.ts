@@ -14,9 +14,48 @@ import { AllConfigType } from './config/config.type';
 import { ResolvePromisesInterceptor } from './utils/serializer.interceptor';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { cors: true });
+  const app = await NestFactory.create(AppModule);
   useContainer(app.select(AppModule), { fallbackOnErrors: true });
   const configService = app.get(ConfigService<AllConfigType>);
+
+  // Explicit CORS allowlist (admin panel + mobile origin + local dev).
+  // Wildcard is intentionally not used so the API rejects unknown origins
+  // once we move past the dev / swagger testing phase.
+  const nodeEnv = configService.get('app.nodeEnv', { infer: true });
+  const allowedOrigins = [
+    configService.get('app.frontendDomain', { infer: true }),
+    configService.get('app.adminDomain', { infer: true }),
+    'http://localhost:3020',
+    'http://localhost:3021',
+    'http://localhost:3022',
+    'http://localhost:3000',
+  ].filter((origin): origin is string => Boolean(origin));
+
+  app.enableCors({
+    origin: (origin, callback) => {
+      // Allow same-origin / curl / mobile native (no Origin header) in dev.
+      if (!origin) {
+        return callback(null, true);
+      }
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      if (nodeEnv === 'development') {
+        return callback(null, true);
+      }
+      return callback(new Error(`CORS: origin ${origin} not allowed`));
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Requested-With',
+      'X-Sensitive-Data',
+      configService.get('app.headerLanguage', { infer: true }) ??
+        'x-custom-lang',
+    ],
+  });
 
   app.enableShutdownHooks();
   app.setGlobalPrefix(

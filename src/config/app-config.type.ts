@@ -4,8 +4,10 @@ export type AppConfig = {
   workingDirectory: string;
   frontendDomain?: string;
   backendDomain: string;
+  adminDomain?: string;
   port: number;
   apiPrefix: string;
   fallbackLanguage: string;
   headerLanguage: string;
+  preBetaMode: boolean;
 };

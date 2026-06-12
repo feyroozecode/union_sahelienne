@@ -8,6 +8,7 @@ import { MatchesModule } from '../matches/matches.module';
 import { PrismaModule } from '../database/prisma.module';
 import { ReportsModule } from '../reports/reports.module';
 import { RelationalSubscriptionPersistenceModule } from '../subscriptions/infrastructure/persistence/relational/relational-persistence.module';
+import { WaitlistModule } from '../waitlist/waitlist.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { RelationalSubscriptionPersistenceModule } from '../subscriptions/infras
     PrismaModule,
     ReportsModule,
     RelationalSubscriptionPersistenceModule,
+    WaitlistModule,
   ],
   controllers: [AdminController],
   providers: [AdminService],

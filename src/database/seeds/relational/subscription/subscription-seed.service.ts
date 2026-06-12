@@ -2,10 +2,34 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma.service';
 
 const TIER_CONFIG = {
-  lite: { creditsGranted: 1, creditsBonus: 1, validityDays: 30, bonusValidityDays: 7, amountFcfa: 5000 },
-  essentiel: { creditsGranted: 3, creditsBonus: 0, validityDays: 30, bonusValidityDays: 0, amountFcfa: 10000 },
-  trimestriel: { creditsGranted: 10, creditsBonus: 0, validityDays: 90, bonusValidityDays: 0, amountFcfa: 25000 },
-  annuel: { creditsGranted: 49, creditsBonus: 0, validityDays: 365, bonusValidityDays: 0, amountFcfa: 75000 },
+  lite: {
+    creditsGranted: 1,
+    creditsBonus: 1,
+    validityDays: 30,
+    bonusValidityDays: 7,
+    amountFcfa: 5000,
+  },
+  essentiel: {
+    creditsGranted: 3,
+    creditsBonus: 0,
+    validityDays: 30,
+    bonusValidityDays: 0,
+    amountFcfa: 10000,
+  },
+  trimestriel: {
+    creditsGranted: 10,
+    creditsBonus: 0,
+    validityDays: 90,
+    bonusValidityDays: 0,
+    amountFcfa: 25000,
+  },
+  annuel: {
+    creditsGranted: 49,
+    creditsBonus: 0,
+    validityDays: 365,
+    bonusValidityDays: 0,
+    amountFcfa: 75000,
+  },
 } as const;
 
 type Tier = keyof typeof TIER_CONFIG;
@@ -25,7 +49,11 @@ export class SubscriptionSeedService {
       include: {
         user: {
           include: {
-            payments: { where: { status: 'validated' }, orderBy: { createdAt: 'asc' }, take: 1 },
+            payments: {
+              where: { status: 'validated' },
+              orderBy: { createdAt: 'asc' },
+              take: 1,
+            },
             subscriptions: { where: { status: 'active' }, take: 1 },
           },
         },
@@ -37,25 +65,35 @@ export class SubscriptionSeedService {
 
       // Skip if already has an active subscription
       if (user.subscriptions.length > 0) {
-        console.log(`[seed:subscription] Already has subscription: ${user.email}`);
+        console.log(
+          `[seed:subscription] Already has subscription: ${user.email}`,
+        );
         continue;
       }
 
       const validatedPayment = user.payments[0];
       if (!validatedPayment) {
-        console.log(`[seed:subscription] No validated payment found for: ${user.email} — skipping`);
+        console.log(
+          `[seed:subscription] No validated payment found for: ${user.email} — skipping`,
+        );
         continue;
       }
 
       // Resolve tier from subscriptionType on profile, or infer from amount
-      const tier = (profile.subscriptionType as Tier | null) ?? this.inferTierFromAmount(validatedPayment.amount);
+      const tier =
+        (profile.subscriptionType as Tier | null) ??
+        this.inferTierFromAmount(validatedPayment.amount);
       const config = TIER_CONFIG[tier];
 
       const now = new Date();
-      const expiresAt = new Date(now.getTime() + config.validityDays * 24 * 60 * 60 * 1000);
+      const expiresAt = new Date(
+        now.getTime() + config.validityDays * 24 * 60 * 60 * 1000,
+      );
       const bonusExpiresAt =
         config.bonusValidityDays > 0
-          ? new Date(now.getTime() + config.bonusValidityDays * 24 * 60 * 60 * 1000)
+          ? new Date(
+              now.getTime() + config.bonusValidityDays * 24 * 60 * 60 * 1000,
+            )
           : null;
 
       // Count credits already used (from accepted matches)
@@ -72,7 +110,10 @@ export class SubscriptionSeedService {
           tier,
           creditsGranted: config.creditsGranted,
           creditsBonus: config.creditsBonus,
-          creditsUsed: Math.min(activeMatches, config.creditsGranted + config.creditsBonus),
+          creditsUsed: Math.min(
+            activeMatches,
+            config.creditsGranted + config.creditsBonus,
+          ),
           status: 'active',
           expiresAt,
           bonusExpiresAt,

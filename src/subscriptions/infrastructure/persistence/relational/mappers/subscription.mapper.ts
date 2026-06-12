@@ -19,20 +19,38 @@ export class SubscriptionMapper {
     return domain;
   }
 
-  static toPersistence(domain: Partial<Subscription>): Partial<PrismaSubscription> {
+  static toPersistence(
+    domain: Partial<Subscription>,
+  ): Partial<PrismaSubscription> {
     return {
       ...(domain.id !== undefined ? { id: domain.id } : {}),
       ...(domain.userId !== undefined ? { userId: domain.userId } : {}),
       ...(domain.tier !== undefined ? { tier: domain.tier } : {}),
-      ...(domain.creditsGranted !== undefined ? { creditsGranted: domain.creditsGranted } : {}),
-      ...(domain.creditsBonus !== undefined ? { creditsBonus: domain.creditsBonus } : {}),
-      ...(domain.creditsUsed !== undefined ? { creditsUsed: domain.creditsUsed } : {}),
+      ...(domain.creditsGranted !== undefined
+        ? { creditsGranted: domain.creditsGranted }
+        : {}),
+      ...(domain.creditsBonus !== undefined
+        ? { creditsBonus: domain.creditsBonus }
+        : {}),
+      ...(domain.creditsUsed !== undefined
+        ? { creditsUsed: domain.creditsUsed }
+        : {}),
       ...(domain.status !== undefined ? { status: domain.status } : {}),
-      ...(domain.expiresAt !== undefined ? { expiresAt: domain.expiresAt } : {}),
-      ...(domain.bonusExpiresAt !== undefined ? { bonusExpiresAt: domain.bonusExpiresAt } : {}),
-      ...(domain.paymentId !== undefined ? { paymentId: domain.paymentId } : {}),
-      ...(domain.createdAt !== undefined ? { createdAt: domain.createdAt } : {}),
-      ...(domain.updatedAt !== undefined ? { updatedAt: domain.updatedAt } : {}),
+      ...(domain.expiresAt !== undefined
+        ? { expiresAt: domain.expiresAt }
+        : {}),
+      ...(domain.bonusExpiresAt !== undefined
+        ? { bonusExpiresAt: domain.bonusExpiresAt }
+        : {}),
+      ...(domain.paymentId !== undefined
+        ? { paymentId: domain.paymentId }
+        : {}),
+      ...(domain.createdAt !== undefined
+        ? { createdAt: domain.createdAt }
+        : {}),
+      ...(domain.updatedAt !== undefined
+        ? { updatedAt: domain.updatedAt }
+        : {}),
     };
   }
 }

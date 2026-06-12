@@ -6,6 +6,7 @@ import { MailData } from './interfaces/mail-data.interface';
 import { MaybeType } from '../utils/types/maybe.type';
 import { MailerService } from '../mailer/mailer.service';
 import path from 'path';
+import fs from 'node:fs/promises';
 import { AllConfigType } from '../config/config.type';
 
 @Injectable()
@@ -14,6 +15,35 @@ export class MailService {
     private readonly mailerService: MailerService,
     private readonly configService: ConfigService<AllConfigType>,
   ) {}
+
+  private async resolveTemplatePath(templateName: string): Promise<string> {
+    const workingDirectory = this.configService.getOrThrow('app.workingDirectory', {
+      infer: true,
+    });
+
+    // Try multiple paths in order of preference
+    const possiblePaths = [
+      // Development path (src)
+      path.join(workingDirectory, 'src', 'mail', 'mail-templates', templateName),
+      // Production path (dist)
+      path.join(workingDirectory, 'dist', 'mail', 'mail-templates', templateName),
+      // Alternative production path (same directory as dist)
+      path.join(workingDirectory, 'mail', 'mail-templates', templateName),
+    ];
+
+    for (const templatePath of possiblePaths) {
+      try {
+        await fs.access(templatePath);
+        return templatePath;
+      } catch {
+        // File doesn't exist, try next path
+        continue;
+      }
+    }
+
+    // Return the first path as default (will fail with proper error if not found)
+    return possiblePaths[0];
+  }
 
   async userSignUp(mailData: MailData<{ hash: string }>): Promise<void> {
     const i18n = I18nContext.current();
@@ -42,15 +72,7 @@ export class MailService {
       to: mailData.to,
       subject: emailConfirmTitle,
       text: `${url.toString()} ${emailConfirmTitle}`,
-      templatePath: path.join(
-        this.configService.getOrThrow('app.workingDirectory', {
-          infer: true,
-        }),
-        'src',
-        'mail',
-        'mail-templates',
-        'activation.hbs',
-      ),
+      templatePath: await this.resolveTemplatePath('activation.hbs'),
       context: {
         title: emailConfirmTitle,
         url: url.toString(),
@@ -95,15 +117,7 @@ export class MailService {
       to: mailData.to,
       subject: resetPasswordTitle,
       text: `${url.toString()} ${resetPasswordTitle}`,
-      templatePath: path.join(
-        this.configService.getOrThrow('app.workingDirectory', {
-          infer: true,
-        }),
-        'src',
-        'mail',
-        'mail-templates',
-        'reset-password.hbs',
-      ),
+      templatePath: await this.resolveTemplatePath('reset-password.hbs'),
       context: {
         title: resetPasswordTitle,
         url: url.toString(),
@@ -146,15 +160,7 @@ export class MailService {
       to: mailData.to,
       subject: emailConfirmTitle,
       text: `${url.toString()} ${emailConfirmTitle}`,
-      templatePath: path.join(
-        this.configService.getOrThrow('app.workingDirectory', {
-          infer: true,
-        }),
-        'src',
-        'mail',
-        'mail-templates',
-        'confirm-new-email.hbs',
-      ),
+      templatePath: await this.resolveTemplatePath('confirm-new-email.hbs'),
       context: {
         title: emailConfirmTitle,
         url: url.toString(),

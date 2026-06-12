@@ -16,10 +16,13 @@ export class Report {
   })
   type: string;
 
-  @ApiPropertyOptional({ example: 'Cette personne demande de l\'argent...' })
+  @ApiPropertyOptional({ example: "Cette personne demande de l'argent..." })
   description?: string | null;
 
-  @ApiProperty({ example: 'pending', description: 'pending | reviewed | dismissed' })
+  @ApiProperty({
+    example: 'pending',
+    description: 'pending | reviewed | dismissed',
+  })
   status: string;
 
   @ApiPropertyOptional({ type: Number })

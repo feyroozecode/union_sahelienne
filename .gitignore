@@ -42,6 +42,9 @@ CLAUDE.md
 .data
 /files
 .env
+.env.staging
+.env.production
+.env.*.local
 /ormconfig.json
 .codegpt
 .omx/

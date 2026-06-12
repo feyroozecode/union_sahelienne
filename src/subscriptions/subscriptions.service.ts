@@ -45,11 +45,14 @@ export class SubscriptionsService {
 
     const bonusExpiresAt =
       config.bonusValidityDays > 0
-        ? new Date(now.getTime() + config.bonusValidityDays * 24 * 60 * 60 * 1000)
+        ? new Date(
+            now.getTime() + config.bonusValidityDays * 24 * 60 * 60 * 1000,
+          )
         : null;
 
     // Expire any existing active subscription
-    const existing = await this.subscriptionRepository.findActiveByUserId(userId);
+    const existing =
+      await this.subscriptionRepository.findActiveByUserId(userId);
     if (existing) {
       await this.subscriptionRepository.update(existing.id, {
         status: SUBSCRIPTION_STATUS_EXPIRED,
@@ -102,7 +105,8 @@ export class SubscriptionsService {
     }
 
     const bonusActive = sub.bonusExpiresAt && sub.bonusExpiresAt > now;
-    const totalGranted = sub.creditsGranted + (bonusActive ? sub.creditsBonus : 0);
+    const totalGranted =
+      sub.creditsGranted + (bonusActive ? sub.creditsBonus : 0);
     return Math.max(0, totalGranted - sub.creditsUsed);
   }
 
@@ -121,7 +125,10 @@ export class SubscriptionsService {
 
     const sub = await this.subscriptionRepository.findActiveByUserId(userId);
     if (!sub) {
-      throw new NotFoundException({ status: 404, error: 'subscriptionNotFound' });
+      throw new NotFoundException({
+        status: 404,
+        error: 'subscriptionNotFound',
+      });
     }
 
     const updated = await this.subscriptionRepository.update(sub.id, {
@@ -129,7 +136,10 @@ export class SubscriptionsService {
     });
 
     if (!updated) {
-      throw new NotFoundException({ status: 404, error: 'subscriptionNotFound' });
+      throw new NotFoundException({
+        status: 404,
+        error: 'subscriptionNotFound',
+      });
     }
 
     return updated;
@@ -138,7 +148,10 @@ export class SubscriptionsService {
   /**
    * Admin: list all subscriptions with optional filters.
    */
-  findAll(filters?: { tier?: string; status?: string }): Promise<Subscription[]> {
+  findAll(filters?: {
+    tier?: string;
+    status?: string;
+  }): Promise<Subscription[]> {
     return this.subscriptionRepository.findAll(filters);
   }
 }

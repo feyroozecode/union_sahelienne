@@ -111,8 +111,9 @@ export class MatchesService {
     }
 
     // Target also needs an available credit slot
-    const targetCredits =
-      await this.subscriptionsService.getAvailableCredits(match.targetId);
+    const targetCredits = await this.subscriptionsService.getAvailableCredits(
+      match.targetId,
+    );
 
     if (targetCredits <= 0) {
       throw new ForbiddenException({
@@ -214,6 +215,14 @@ export class MatchesService {
 
     if (!user || !user.profile) {
       throw new NotFoundException({ status: 404, error: 'profileNotFound' });
+    }
+
+    if (user.waitlistReason) {
+      throw new ForbiddenException({
+        status: 403,
+        error: 'waitlisted',
+        waitlistReason: user.waitlistReason,
+      });
     }
 
     if (!user.profile.isValidated) {

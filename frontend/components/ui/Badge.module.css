@@ -1,0 +1,40 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.neutral {
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.success {
+  background-color: rgba(62, 124, 89, 0.15);
+  color: #4ade80;
+  border: 1px solid rgba(62, 124, 89, 0.3);
+}
+
+.warning {
+  background-color: rgba(194, 142, 14, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(194, 142, 14, 0.3);
+}
+
+.error {
+  background-color: rgba(163, 51, 39, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(163, 51, 39, 0.3);
+}
+
+.info {
+  background-color: rgba(230, 213, 195, 0.1);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}

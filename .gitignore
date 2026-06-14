@@ -1,6 +1,10 @@
-# compiled output
+# compiled output / dependencies / build caches (anywhere, incl. admin/ & frontend/)
 /dist
-/node_modules
+dist/
+node_modules/
+.next/
+.turbo/
+*.tsbuildinfo
 
 # Logs
 logs

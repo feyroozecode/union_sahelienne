@@ -1,6 +1,5 @@
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3020/api/v1';
-
 if (!API_BASE_URL) {
   throw new Error(
     'NEXT_PUBLIC_API_URL is not set. Copy admin/.env.example to admin/.env.development (or .env.production) and fill it in.',

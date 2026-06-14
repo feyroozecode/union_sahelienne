@@ -1,6 +1,7 @@
 import {
   HttpStatus,
   Injectable,
+  Logger,
   NotFoundException,
   UnauthorizedException,
   UnprocessableEntityException,
@@ -50,6 +51,8 @@ export interface WaitlistBlock {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly jwtService: JwtService,
     private readonly usersService: UsersService,
@@ -129,7 +132,14 @@ export class AuthService {
 
   async verifyOtp(dto: AuthOtpVerifyDto): Promise<LoginResponseDto> {
     const user = await this.resolveUserByContact(dto);
-    const purpose = dto.purpose ?? 'login';
+    // Honour the purpose the OTP was actually issued for. The client need not
+    // echo it back — a registration OTP (stored purpose 'register') must verify
+    // as 'register' so the account is activated, even though the mobile client
+    // sends no purpose and would otherwise default to 'login' → otpPurposeMismatch.
+    const purpose =
+      dto.purpose ??
+      (user.otpPurpose as 'login' | 'register' | 'forgot-password' | null) ??
+      'login';
 
     if (purpose === 'forgot-password') {
       throw new UnprocessableEntityException({
@@ -230,6 +240,23 @@ export class AuthService {
       }
     | void
   > {
+    // If this email already belongs to an unverified (inactive) account, a prior
+    // attempt created the user but failed before activation (e.g. OTP delivery
+    // error). Treat the re-submit as a resend instead of throwing
+    // "email already exists", which would otherwise strand the account.
+    if (dto.email) {
+      const existing = await this.usersService.findByEmail(dto.email);
+      if (
+        existing &&
+        existing.status?.id?.toString() === StatusEnum.inactive.toString()
+      ) {
+        return this.otpService.sendOtp(existing, {
+          purpose: 'register',
+          preferredChannel: 'email',
+        });
+      }
+    }
+
     const user = await this.usersService.create({
       email: dto.email ?? null,
       phone: dto.phone ?? null,
@@ -274,6 +301,8 @@ export class AuthService {
         preferredChannel: 'phone',
       });
     }
+
+    return undefined;
   }
 
   async confirmEmail(hash: string): Promise<void> {
@@ -396,13 +425,21 @@ export class AuthService {
       },
     );
 
-    await this.mailService.forgotPassword({
-      to: email,
-      data: {
-        hash,
-        tokenExpires,
-      },
-    });
+    try {
+      await this.mailService.forgotPassword({
+        to: email,
+        data: {
+          hash,
+          tokenExpires,
+        },
+      });
+    } catch (error) {
+      this.logger.warn(
+        `Failed to send forgot-password email to ${email}: ${
+          error instanceof Error ? error.message : error
+        }`,
+      );
+    }
   }
 
   async forgotPasswordWithOtp(
@@ -592,12 +629,20 @@ export class AuthService {
         },
       );
 
-      await this.mailService.confirmNewEmail({
-        to: userDto.email,
-        data: {
-          hash,
-        },
-      });
+      try {
+        await this.mailService.confirmNewEmail({
+          to: userDto.email,
+          data: {
+            hash,
+          },
+        });
+      } catch (error) {
+        this.logger.warn(
+          `Failed to send confirm-new-email to ${userDto.email}: ${
+            error instanceof Error ? error.message : error
+          }`,
+        );
+      }
     }
 
     delete userDto.email;

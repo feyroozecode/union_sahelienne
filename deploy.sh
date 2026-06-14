@@ -5,7 +5,11 @@ set -euo pipefail
 REPO_DIR="/var/www/union_sahelienne"
 COMPOSE_FILE="docker-compose.prod.yml"
 ENV_FILE=".env"
-GIT_BRANCH="main"
+# Deploy from prod: the deploy infra (this script, docker-compose.prod.yml,
+# nginx/, certbot/) lives on the prod branch. Checking out main here would
+# delete those files from the working tree and break the compose commands below.
+# prod carries the merged app code, so it is the single source of truth for deploys.
+GIT_BRANCH="prod"
 
 # ── Colors ────────────────────────────────────────────
 GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'

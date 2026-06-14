@@ -4,6 +4,25 @@
 
 ---
 
+## [2026-06-14 10:34] - New public-facing web app (`web/`) — modern, production-ready
+
+### What changed
+- Built a brand-new public marketing + onboarding web app in `web/` (Next.js 16 App Router, React 19, TypeScript), separate from the plain admin in `frontend/`.
+- Aesthetic "Sahel Editorial": warm sand grounds, deep Sahel indigo, terracotta + millet-gold accents, Fraunces serif + Hanken Grotesk, grain texture and woven diamond motifs.
+- Pages: `/` (landing — hero, valeurs, parcours, offres/pricing, CTA), `/inscription` (3-step signup), `/otp` (verification that shows the beta code on screen), `/connexion` (login), `/espace` (token-gated authenticated landing).
+- Wired to the live backend: `POST /auth/email/register` → `/otp` → `POST /auth/otp/verify` (persists tokens) and `POST /auth/email/login`. API base from `NEXT_PUBLIC_API_BASE_URL` (fallback = prod URL).
+
+### Why
+- The only existing frontend across all branches was the simple 2-color admin dashboard; no modern, public, production-ready frontend existed. (Confirmed by scanning all 28 remote branches.) Merging `backend`→`main` was rejected as it would only re-import 54k build artifacts + conflict markers.
+
+### Result
+- `npm run build` green — 6 routes prerendered. `node_modules`/`.next` gitignored (no artifacts tracked).
+
+### Files added
+- web/ — full Next.js app (app/, components/, lib/, config, README)
+
+---
+
 ## [2026-06-12 08:45] - Pre-beta OTP mode + fix mail template path errors
 
 ### What changed

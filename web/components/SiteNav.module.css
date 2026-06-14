@@ -1,0 +1,89 @@
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  transition: background 0.4s var(--ease), backdrop-filter 0.4s ease,
+    box-shadow 0.4s ease, border-color 0.4s ease;
+  border-bottom: 1px solid transparent;
+}
+.scrolled {
+  background: rgba(250, 243, 230, 0.82);
+  backdrop-filter: saturate(140%) blur(14px);
+  border-bottom-color: var(--line);
+  box-shadow: 0 4px 24px rgba(36, 25, 16, 0.05);
+}
+.inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 76px;
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+.brandMark { width: 20px; height: 20px; }
+.brandText {
+  font-family: var(--display);
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.brandText em { font-style: italic; color: var(--indigo); }
+
+.links {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+.links a {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  transition: color 0.2s ease;
+}
+.links a:hover { color: var(--ink); }
+.signin { color: var(--ink) !important; font-weight: 600 !important; }
+
+.burger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+}
+.burger span {
+  width: 24px;
+  height: 2px;
+  background: var(--ink);
+  border-radius: 2px;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+@media (max-width: 880px) {
+  .burger { display: flex; }
+  .links {
+    position: absolute;
+    top: 76px;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    gap: 18px;
+    padding: 26px 28px 34px;
+    background: var(--cream);
+    border-bottom: 1px solid var(--line);
+    box-shadow: var(--shadow-soft);
+    transform: translateY(-12px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s var(--ease);
+  }
+  .linksOpen { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  .links a, .links :global(.btn) { width: 100%; }
+}

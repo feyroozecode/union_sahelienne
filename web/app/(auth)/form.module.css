@@ -1,0 +1,139 @@
+.head { margin-bottom: 32px; }
+.kicker {
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--clay-deep);
+}
+.title {
+  font-size: clamp(30px, 4vw, 40px);
+  margin-top: 14px;
+}
+.sub {
+  margin-top: 12px;
+  color: var(--ink-soft);
+  font-size: 15.5px;
+  line-height: 1.55;
+}
+.sub b { color: var(--ink); }
+
+.form { display: flex; flex-direction: column; gap: 18px; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+.error {
+  background: rgba(187, 87, 51, 0.1);
+  border: 1px solid rgba(187, 87, 51, 0.35);
+  color: var(--clay-deep);
+  border-radius: var(--r-sm);
+  padding: 12px 14px;
+  font-size: 14px;
+  font-weight: 500;
+}
+.notice {
+  background: rgba(92, 107, 63, 0.12);
+  border: 1px solid rgba(92, 107, 63, 0.3);
+  color: var(--acacia);
+  border-radius: var(--r-sm);
+  padding: 12px 14px;
+  font-size: 14px;
+}
+
+.alt { margin-top: 26px; font-size: 14.5px; color: var(--ink-soft); text-align: center; }
+.alt a { color: var(--indigo); font-weight: 600; }
+.alt a:hover { text-decoration: underline; }
+
+/* segmented control (gender / channel) */
+.seg { display: flex; gap: 10px; }
+.segBtn {
+  flex: 1;
+  padding: 13px;
+  border-radius: var(--r-sm);
+  border: 1.5px solid var(--line);
+  background: var(--bone);
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.segBtn:hover { border-color: var(--ink-faint); }
+.segActive {
+  border-color: var(--indigo);
+  background: var(--indigo);
+  color: var(--bone);
+}
+
+/* step indicator */
+.steps { display: flex; gap: 8px; margin-bottom: 28px; }
+.stepDot {
+  height: 4px;
+  flex: 1;
+  border-radius: 4px;
+  background: var(--line);
+  transition: background 0.4s var(--ease);
+}
+.stepActive { background: var(--clay); }
+
+.back {
+  background: none;
+  border: none;
+  color: var(--ink-soft);
+  font-family: var(--sans);
+  font-size: 14.5px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 8px 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.back:hover { color: var(--ink); }
+
+/* OTP boxes */
+.otpRow { display: flex; gap: 10px; justify-content: space-between; margin: 6px 0 4px; }
+.otpBox {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  max-height: 64px;
+  text-align: center;
+  font-family: var(--display);
+  font-size: 28px;
+  font-weight: 500;
+  color: var(--ink);
+  background: var(--bone);
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-sm);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.otpBox:focus {
+  outline: none;
+  border-color: var(--indigo);
+  box-shadow: 0 0 0 4px rgba(39, 37, 97, 0.1);
+}
+
+.codeHint {
+  margin-top: 4px;
+  background: var(--indigo);
+  color: var(--bone);
+  border-radius: var(--r-md);
+  padding: 16px 18px;
+  text-align: center;
+}
+.codeHint span { font-size: 13px; color: #c3bedd; display: block; }
+.codeHint strong {
+  font-family: var(--display);
+  font-size: 30px;
+  letter-spacing: 0.32em;
+  color: var(--gold-soft);
+  display: block;
+  margin-top: 6px;
+  padding-left: 0.32em;
+}
+.resend { text-align: center; margin-top: 18px; font-size: 14px; color: var(--ink-soft); }
+.resend button {
+  background: none; border: none; cursor: pointer;
+  color: var(--indigo); font-weight: 600; font-family: var(--sans); font-size: 14px;
+}
+.resend button:disabled { color: var(--ink-faint); cursor: default; }

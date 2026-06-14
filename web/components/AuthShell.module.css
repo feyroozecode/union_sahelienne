@@ -1,0 +1,86 @@
+.wrap {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 0.85fr 1.15fr;
+}
+
+/* — Brand panel — */
+.aside {
+  position: relative;
+  background: linear-gradient(160deg, var(--indigo) 0%, var(--indigo-deep) 70%, #120f33 100%);
+  color: var(--bone);
+  padding: 48px 52px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+}
+.asideBand {
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 100%;
+  height: 46px;
+  object-fit: cover;
+}
+.brand {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--display);
+  font-size: 23px;
+  color: var(--bone);
+}
+.brand em { font-style: italic; color: var(--gold-soft); }
+.brandMark { width: 20px; height: 20px; }
+
+.asideBody { position: relative; max-width: 420px; }
+.quote {
+  font-family: var(--display);
+  font-size: clamp(26px, 2.6vw, 34px);
+  font-weight: 380;
+  font-style: italic;
+  line-height: 1.28;
+  color: var(--bone);
+}
+.author {
+  margin-top: 20px;
+  font-size: 14px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold-soft);
+}
+.asideFoot {
+  position: relative;
+  font-size: 13.5px;
+  color: #b7b1d4;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--acacia); box-shadow: 0 0 0 4px rgba(92,107,63,0.3); }
+
+/* — Form column — */
+.main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 40px;
+}
+.formCol {
+  width: 100%;
+  max-width: 440px;
+}
+
+@media (max-width: 900px) {
+  .wrap { grid-template-columns: 1fr; }
+  .aside {
+    padding: 28px 28px 36px;
+    min-height: auto;
+    gap: 26px;
+  }
+  .asideBody { display: none; }
+  .asideBand { height: 30px; }
+  .main { padding: 40px 24px 64px; }
+}

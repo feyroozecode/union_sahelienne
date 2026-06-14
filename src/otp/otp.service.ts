@@ -1,12 +1,16 @@
-import { Injectable, UnprocessableEntityException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+import { AllConfigType } from '../config/config.type';
 import { MailService } from '../mail/mail.service';
 import { User } from '../users/domain/user';
 import { UsersService } from '../users/users.service';
 import { OtpGateway } from './otp-gateway';
-import { AllConfigType } from '../config/config.type';
 
 export type OtpPurpose = 'login' | 'register' | 'forgot-password';
 export type OtpChannel = 'email' | 'phone';
@@ -15,6 +19,8 @@ const OTP_EXPIRY_MINUTES = 10;
 
 @Injectable()
 export class OtpService {
+  private readonly logger = new Logger(OtpService.name);
+
   constructor(
     private readonly usersService: UsersService,
     private readonly mailService: MailService,
@@ -59,18 +65,21 @@ export class OtpService {
       lastOtpAt: new Date(),
     });
 
-    // Skip email/SMS sending in pre-beta mode - code will be returned in response
-    if (!isPreBetaMode) {
-      if (channel === 'email') {
-        await this.mailService.sendOtpCode({
-          to: target,
-          data: {
-            code,
-            purpose: options.purpose,
-            expiresAt: expiry,
-          },
-        });
-      } else {
+    // BETA OTP DELIVERY (no external email/SMS provider).
+    // The SMTP provider is down (535 auth failures crashed signup), so for now
+    // we do NOT send any email. For the email channel — and whenever pre-beta
+    // mode is on — the code is logged on the server and returned in the API
+    // response so the mobile app can display it directly. SMS is still attempted
+    // for the phone channel, but delivery failures never crash the request.
+    const skipDelivery = isPreBetaMode || channel === 'email';
+
+    if (skipDelivery) {
+      this.logger.log(
+        `OTP (${options.purpose}) for ${this.maskTarget(target, channel)} → code ${code} ` +
+          `[delivery skipped; returned to client, expires in ${OTP_EXPIRY_MINUTES}m]`,
+      );
+    } else {
+      try {
         const purposeLabel =
           options.purpose === 'forgot-password'
             ? 'password reset'
@@ -82,6 +91,12 @@ export class OtpService {
           to: target,
           message: `Your Union Sahélienne OTP code for ${purposeLabel} is ${code}. It expires in ${OTP_EXPIRY_MINUTES} minutes.`,
         });
+      } catch (error) {
+        this.logger.error(
+          `Failed to deliver OTP via ${channel} to ${this.maskTarget(target, channel)}: ${
+            error instanceof Error ? error.message : String(error)
+          }. Challenge still issued; caller may resend.`,
+        );
       }
     }
 
@@ -90,8 +105,8 @@ export class OtpService {
       channel,
       target: this.maskTarget(target, channel),
       expiresAt: expiry.getTime(),
-      // Include code in response for pre-beta testing
-      ...(isPreBetaMode && { code }),
+      // Return the code to the client whenever we are not delivering it out-of-band.
+      ...(skipDelivery && { code }),
     };
   }
 

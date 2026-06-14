@@ -4,6 +4,80 @@
 
 ---
 
+## [2026-06-14 03:24] - Complete OTP signup loop: verify purpose + mobile wiring
+
+### What changed
+- `src/auth/auth.service.ts` — `verifyOtp` now derives the purpose from the stored OTP (`user.otpPurpose`) when the client sends none, instead of defaulting to `'login'`.
+- Mobile (`/Users/a/dev/mobile/all_apps/union_sahelien`, wired in parallel) — register → `/otp` navigation now passes `isPhone` (from the backend-reported `channel`) and `debugCode`; the router threads `purpose`/`debugCode` into `OtpCubit`/`OtpPage`; the OTP page displays the returned code on screen and refreshes it on resend; resend re-issues with the correct purpose.
+
+### Why
+- Even after the SMTP crash fix, the email signup loop had two breakers: (1) the mobile client sends no `purpose` on verify, so the backend defaulted to `'login'` and `otpService.verifyOtp` threw `otpPurposeMismatch` against the stored `'register'`; (2) the OTP screen defaulted `isPhone` to true, so an email signup verified as `phone: <email>` and the user was never found.
+
+### Result
+- Backend build green; auth spec passes. Full mobile `lib` analyze: 0 errors.
+- End-to-end email signup now: register → user created → code logged + returned → shown on OTP screen → verify (purpose derived 'register') → account activated → tokens issued → /home.
+- **Still requires backend redeploy** to take effect on the live API.
+
+### Files modified
+- src/auth/auth.service.ts — derive verify purpose from stored otpPurpose
+- (mobile) otp_cubit/otp_state/otp_page, app_router, register_page — OTP-on-screen wiring
+
+## [2026-06-14 03:18] - Fix production signup crash (SMTP 535) + OTP-on-screen for beta
+
+### What changed
+- `src/otp/otp.service.ts` — email OTP no longer sends any email. For the email channel (and pre-beta mode) the code is **logged on the server** and **returned in the API response** so the mobile app can display it. SMS (phone channel) is still attempted but wrapped so delivery failures can never crash the request.
+- `src/auth/auth.service.ts` — `register()` now detects an existing **inactive** (unverified) account for the same email and resends the OTP instead of throwing `emailAlreadyExists`. Stops orphaned accounts from blocking retry.
+
+### Why
+- Server logs showed `ERROR [ExceptionsHandler] Invalid login: 535 Authentication failed` from nodemailer on every signup: the prod SMTP credentials are revoked/expired. `mailService.sendOtpCode()` threw uncaught **after** the user row was created, so the client saw `serverError`, and retrying the same email hit `emailAlreadyExists`. Commit b94d3e92 swapped the email *content* (OTP vs confirm-link) but still used the dead SMTP path, so the 535 persisted.
+- Per product decision for the closed beta: skip email entirely, surface the OTP on the mobile screen + server logs. No SMTP/SES dependency on the signup critical path.
+
+### Result
+- `npm run build` green; auth + matches specs pass.
+- First registration attempt returns `{ requiresOtp, channel, target, expiresAt, code }` (200) instead of 500. `code` is shown to the client and logged.
+- **Requires backend redeploy to take effect online.** Mobile still needs an OTP entry screen to consume the code (next step).
+
+### Files modified
+- src/otp/otp.service.ts — disable email send; log + return OTP; guard SMS delivery
+- src/auth/auth.service.ts — resend OTP for unverified existing email
+
+## [2026-06-14 03:10] - Day 1: Restore green backend build (finish-week plan)
+
+### What changed
+- Regenerated Prisma client (`npm run prisma:generate`) — resolves the 8 errors from `waitlistReason`/`waitlistedAt` not being in generated types after the waitlist migration.
+- Added missing `Logger` import to `src/otp/otp.service.ts` (used at line 18, import dropped in the b92fa0ec merge).
+- `src/auth/auth.service.ts` — `return null` → `return undefined` to match the `... | void` return type of `register()`.
+- Removed the `{{SPACE}}` merge artifact from `src/database/seeds/relational/user/user-seed.service.ts:411`.
+- `package.json` — `start:prod` now `node dist/src/main` (NestJS emits to `dist/src/`, Procfile depends on this for prod start).
+
+### Why
+- Today's merge (b92fa0ec) shipped a broken build to main (13 TS errors). Day 1 of `plans/finish-week-2026-06-12.md` is to restore green before any further feature work, and to fix the long-standing `start:prod` path bug that would break production startup.
+
+### Result
+- `npm run build` → exit 0, emits `dist/src/main.js` (matches fixed `start:prod`).
+- `npm run test` → 6 suites / 24 tests pass, including `auth.service.spec.ts` which previously failed to compile.
+
+### Files modified
+- src/otp/otp.service.ts — add `Logger` import
+- src/auth/auth.service.ts — `return undefined` for void path
+- src/database/seeds/relational/user/user-seed.service.ts — remove `{{SPACE}}` artifact
+- package.json — fix `start:prod` output path
+
+## [2026-06-12 12:55] - Full-stack review (API, web, docs, deployment, mobile) + new finish-week plan
+
+### What changed
+- Ran a full review across all tiers: backend API, admin panel (`frontend/`), documentation/deployment readiness, and the Flutter mobile app (`/Users/a/dev/mobile/all_apps/union_sahelien`).
+- Wrote `plans/finish-week-2026-06-12.md` — a gated, two-track 7-day plan (Jun 13–19) superseding `mvp-auth-matches-1week.md`.
+
+### Why
+- Today's merge (b92fa0ec) re-broke the backend build (13 TS errors: missing Prisma regeneration for waitlist fields, missing `Logger` import in `otp.service.ts`, `return null` type error in `auth.service.ts:281`, `{{SPACE}}` artifact in `user-seed.service.ts:411`).
+- The OTP signup change (b94d3e92) makes account activation OTP-gated, but the mobile app has no OTP verification UI — new users cannot complete signup on the app. This is now the critical path.
+- Other key findings: admin panel builds green and is deploy-ready; mobile builds a debug APK with 0 analyze errors but has ~28 uncommitted files, a hardcoded `candidate_profile_page`, and a default entrypoint that hits the production API; `start:prod` still points to `dist/main` instead of `dist/src/main.js`; 21 env secret placeholders remain before production deploy.
+
+### Files modified
+- plans/finish-week-2026-06-12.md — new 7-day gated plan with daily gates, parallel tracks, cut list, and standing risks
+- CHANGELOG.md — this entry
+
 ## [2026-06-11 00:30] - Mobile Matches data layer wired to live backend API (MVP Day 2-4)
 
 > Note: mobile app lives at `/Users/a/dev/mobile/all_apps/union_sahelien`. This

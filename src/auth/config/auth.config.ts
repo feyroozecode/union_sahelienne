@@ -1,6 +1,7 @@
 import { registerAs } from '@nestjs/config';
 
-import { IsString } from 'class-validator';
+import { IsBoolean, IsOptional, IsString } from 'class-validator';
+import { Transform } from 'class-transformer';
 import validateConfig from '../../utils/validate-config';
 import { AuthConfig } from './auth-config.type';
 import ms from 'ms';
@@ -29,6 +30,11 @@ class EnvironmentVariablesValidator {
 
   @IsString()
   AUTH_CONFIRM_EMAIL_TOKEN_EXPIRES_IN: string;
+
+  @Transform(({ value }) => value === 'true')
+  @IsBoolean()
+  @IsOptional()
+  AUTH_OTP_DEBUG_CODE: boolean;
 }
 
 export default registerAs<AuthConfig>('auth', () => {
@@ -44,5 +50,6 @@ export default registerAs<AuthConfig>('auth', () => {
     confirmEmailSecret: process.env.AUTH_CONFIRM_EMAIL_SECRET,
     confirmEmailExpires: process.env
       .AUTH_CONFIRM_EMAIL_TOKEN_EXPIRES_IN as ms.StringValue,
+    otpDebugCode: process.env.AUTH_OTP_DEBUG_CODE === 'true',
   };
 });

@@ -40,7 +40,12 @@ describe('Auth Module', () => {
           firstName: newUserFirstName,
           lastName: newUserLastName,
         })
-        .expect(204);
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body.requiresOtp).toBe(true);
+          expect(body.channel).toBe('email');
+          expect(body.expiresAt).toBeDefined();
+        });
     });
 
     describe('Login', () => {
@@ -55,49 +60,50 @@ describe('Auth Module', () => {
       });
     });
 
-    describe('Confirm email', () => {
-      it('should successfully: /api/v1/auth/email/confirm (POST)', async () => {
-        const hash = await request(mail)
+    describe('Verify registration OTP', () => {
+      const getOtpFromMail = () =>
+        request(mail)
           .get('/email')
-          .then(({ body }) =>
-            body
-              .find(
-                (letter) =>
-                  letter.to[0].address.toLowerCase() ===
-                    newUserEmail.toLowerCase() &&
-                  /.*confirm\-email\?hash\=(\S+).*/g.test(letter.text),
-              )
-              ?.text.replace(/.*confirm\-email\?hash\=(\S+).*/g, '$1'),
+          .then(
+            ({ body }) =>
+              body
+                .filter(
+                  (letter) =>
+                    letter.to[0].address.toLowerCase() ===
+                      newUserEmail.toLowerCase() &&
+                    /account activation.*?(\d{6})/s.test(letter.text),
+                )
+                .pop()
+                ?.text.match(/account activation.*?(\d{6})/s)?.[1],
           );
 
+      it('should successfully: /api/v1/auth/otp/verify (POST)', async () => {
+        const otp = await getOtpFromMail();
+
         return request(app)
-          .post('/api/v1/auth/email/confirm')
+          .post('/api/v1/auth/otp/verify')
           .send({
-            hash,
+            email: newUserEmail,
+            otp,
+            purpose: 'register',
           })
-          .expect(204);
+          .expect(200)
+          .expect(({ body }) => {
+            expect(body.token).toBeDefined();
+          });
       });
 
-      it('should fail for already confirmed email: /api/v1/auth/email/confirm (POST)', async () => {
-        const hash = await request(mail)
-          .get('/email')
-          .then(({ body }) =>
-            body
-              .find(
-                (letter) =>
-                  letter.to[0].address.toLowerCase() ===
-                    newUserEmail.toLowerCase() &&
-                  /.*confirm\-email\?hash\=(\S+).*/g.test(letter.text),
-              )
-              ?.text.replace(/.*confirm\-email\?hash\=(\S+).*/g, '$1'),
-          );
+      it('should fail for already used OTP: /api/v1/auth/otp/verify (POST)', async () => {
+        const otp = await getOtpFromMail();
 
         return request(app)
-          .post('/api/v1/auth/email/confirm')
+          .post('/api/v1/auth/otp/verify')
           .send({
-            hash,
+            email: newUserEmail,
+            otp,
+            purpose: 'register',
           })
-          .expect(404);
+          .expect(422);
       });
     });
   });
@@ -258,7 +264,7 @@ describe('Auth Module', () => {
           firstName: newUserFirstName,
           lastName: newUserLastName,
         })
-        .expect(204);
+        .expect(200);
 
       const newUserApiToken = await request(app)
         .post('/api/v1/auth/email/login')

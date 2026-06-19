@@ -4,6 +4,20 @@
 
 ---
 
+## [2026-06-19 15:08] - Fix backend boot crash: WaitlistModule missing UserRepository
+
+### What changed
+- `src/waitlist/waitlist.module.ts` — imports the user persistence module (relational/document switch, same as `UsersModule`) so `WaitlistService`/`GenderBalanceService` can resolve their `UserRepository` dependency.
+
+### Why
+- The app failed to boot: `Nest can't resolve dependencies of the WaitlistService (?)… UserRepository at index [0] is not available in the WaitlistModule context`. `npm run build` was green (DI is a runtime concern), so this was invisible until startup. The live server runs an older build, so a redeploy of current code would have crashed on boot.
+
+### Result
+- Verified by actually booting the compiled app: "Nest application successfully started", no DI error. `npm run build` green.
+
+### Files modified
+- src/waitlist/waitlist.module.ts
+
 ## [2026-06-19 10:05] - Fix web app 500 (CORS preflight) + backend build regression
 
 ### What changed

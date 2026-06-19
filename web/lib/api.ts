@@ -13,15 +13,34 @@ export class ApiError extends Error {
   }
 }
 
-/** Pull a human-readable message out of a NestJS error body. */
+/** Map backend error codes to user-facing French messages. */
+const FR_ERRORS: Record<string, string> = {
+  notFound: "Aucun compte ne correspond à ces informations.",
+  emailAlreadyExists: "Un compte existe déjà avec cette adresse e-mail.",
+  incorrectPassword: "Mot de passe incorrect.",
+  invalidOtp: "Code de vérification incorrect.",
+  otpExpired: "Le code a expiré. Demandez un nouveau code.",
+  otpNotRequested: "Aucun code n'a été demandé. Recommencez l'inscription.",
+  otpPurposeMismatch: "Code invalide pour cette action. Demandez un nouveau code.",
+  accountNotVerified: "Votre compte n'est pas encore vérifié. Vérifiez votre code.",
+  emailNotConfirmed: "Votre compte n'est pas encore vérifié.",
+  missingOtpTarget: "Adresse e-mail manquante.",
+  accountAlreadyVerified: "Ce compte est déjà vérifié. Connectez-vous.",
+  needLoginViaProvider: "Connectez-vous via votre fournisseur (Google/Apple).",
+};
+
+/** Pull a human-readable French message out of a NestJS error body. */
 function extractMessage(body: unknown, fallback: string): string {
   if (body && typeof body === "object") {
     const b = body as Record<string, unknown>;
-    if (typeof b.message === "string") return b.message;
-    if (Array.isArray(b.message) && b.message.length) return String(b.message[0]);
     if (b.errors && typeof b.errors === "object") {
       const first = Object.values(b.errors as Record<string, unknown>)[0];
-      if (typeof first === "string") return first;
+      if (typeof first === "string") return FR_ERRORS[first] ?? first;
+    }
+    if (typeof b.message === "string") return FR_ERRORS[b.message] ?? b.message;
+    if (Array.isArray(b.message) && b.message.length) {
+      const m = String(b.message[0]);
+      return FR_ERRORS[m] ?? m;
     }
   }
   return fallback;
@@ -97,10 +116,12 @@ export const api = {
       body: JSON.stringify(payload),
     }),
 
-  verifyOtp: (email: string, otp: string) =>
+  verifyOtp: (email: string, otp: string, purpose: "register" | "login" = "register") =>
     request<LoginResponse>("/auth/otp/verify", {
       method: "POST",
-      body: JSON.stringify({ email, otp }),
+      // Sending the purpose explicitly lets verification succeed even on backend
+      // builds that don't yet derive it from the stored challenge.
+      body: JSON.stringify({ email, otp, purpose }),
     }),
 
   resendOtp: (email: string) =>

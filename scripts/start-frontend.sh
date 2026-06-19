@@ -42,7 +42,7 @@ trap cleanup INT TERM EXIT
 # ─────────────────────────────────────────────────────────────────
 # ADMIN WEB FRONTEND (Next.js on port 3001)
 # ─────────────────────────────────────────────────────────────────
-ADMIN_DIR="$ROOT/admin"
+ADMIN_DIR="$ROOT/frontend"
 
 if [[ -d "$ADMIN_DIR" && -f "$ADMIN_DIR/package.json" ]]; then
   info "Starting admin panel (Next.js)…"

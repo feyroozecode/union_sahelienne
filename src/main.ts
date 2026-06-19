@@ -28,8 +28,15 @@ async function bootstrap() {
     'http://localhost:3020',
     'http://localhost:3021',
     'http://localhost:3022',
+    'http://localhost:3030', // public web app (dev)
+    'http://localhost:3031',
     'http://localhost:3000',
-  ].filter((origin): origin is string => Boolean(origin));
+  ]
+    // FRONTEND_DOMAIN / ADMIN_DOMAIN may hold a comma-separated list so several
+    // public domains (apex + www, web app + admin) can be allowed at once.
+    .filter((origin): origin is string => Boolean(origin))
+    .flatMap((value) => value.split(',').map((part) => part.trim()))
+    .filter(Boolean);
 
   app.enableCors({
     origin: (origin, callback) => {
@@ -43,7 +50,10 @@ async function bootstrap() {
       if (nodeEnv === 'development') {
         return callback(null, true);
       }
-      return callback(new Error(`CORS: origin ${origin} not allowed`));
+      // Reject cleanly. Throwing here surfaces as a 500 on the CORS preflight
+      // (OPTIONS) instead of a normal CORS block, which browsers report as an
+      // opaque "500 Internal Server Error" on every login/signup request.
+      return callback(null, false);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],

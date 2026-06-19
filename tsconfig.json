@@ -19,5 +19,5 @@
     "noFallthroughCasesInSwitch": false,
     "esModuleInterop": true
   },
-  "exclude": ["node_modules", "dist", "frontend"]
+  "exclude": ["node_modules", "dist", "frontend", "admin", "web"]
 }

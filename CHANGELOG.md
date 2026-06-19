@@ -4,6 +4,25 @@
 
 ---
 
+## [2026-06-19 10:05] - Fix web app 500 (CORS preflight) + backend build regression
+
+### What changed
+- `src/main.ts` — CORS: added the public web app origins (`localhost:3030/3031`), made `FRONTEND_DOMAIN`/`ADMIN_DOMAIN` accept a comma-separated list, and **reject unknown origins with `callback(null, false)` instead of throwing**.
+- `tsconfig.json` + `tsconfig.build.json` — exclude `web/` (and `admin/`) so `nest build` no longer tries to compile the Next.js app (was failing with `TS17004: Cannot use JSX`).
+- `web/lib/api.ts` — `verifyOtp` now sends `purpose: "register"` (so verification succeeds even on backend builds that don't derive purpose), and backend error codes are mapped to friendly French messages.
+
+### Why
+- The web app's login/signup returned **HTTP 500**. Root cause: the CORS origin callback threw `new Error(...)` for any non-allowlisted origin, which NestJS surfaces as a 500 on the preflight `OPTIONS` (verified: preflight → 500, no `Access-Control-Allow-*` headers). The web app's origin was not in the allowlist, so every browser request failed at preflight.
+- Adding `web/` to the repo broke `npm run build` because `tsc` started compiling the Next app.
+- The live API still lacks the verify-purpose fix; sending `purpose` from the client makes signup work regardless.
+
+### Result
+- Backend `npm run build` green (web/ excluded). Web `npm run build` green (6 routes).
+- **Still requires:** redeploy the backend (prod) and set `FRONTEND_DOMAIN` to the web app's domain (comma-separated with the admin domain).
+
+### Files modified
+- src/main.ts, tsconfig.json, tsconfig.build.json, web/lib/api.ts
+
 ## [2026-06-14 10:34] - New public-facing web app (`web/`) — modern, production-ready
 
 ### What changed
